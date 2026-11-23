@@ -49,6 +49,7 @@ Astuce : ajoutez `index.html` à vos favoris ou créez un raccourci sur le burea
 | **Saisie rapide** | Ajout d'actes **sans formulaire** : texte à balises ou tableau copié depuis Excel, avec suggestions à la frappe après `@`, aperçu, contrôle des erreurs et détection des doublons. Les balises que vous inventez (`@parrain`, `@source`…) sont gardées comme champs personnalisés. Voir [`docs/FORMAT_SAISIE.md`](docs/FORMAT_SAISIE.md). |
 | **Fiche de consultation** | Feuille A4 portrait à emporter aux archives : une ligne par document, la cote puis les informations séparées par des tirets (date — acte — personnes — notaire…), case à cocher, rappel des dépouillements en cours, cadre de notes ; annotations et lignes vides en option. |
 | **Dépouillements** | Suivi page à page de la lecture d'un registre, d'une étude notariale ou d'un fonds. |
+| **Études de cas** | Les TP par année (2023 : 8 études), protégés par mot de passe : couvertures puis pages de défis avec leurs liens cliquables. Le mot de passe des énoncés montre les questions, celui des solutions montre aussi les réponses (avec un bouton pour les masquer). |
 | **Liens** | Sites utiles, rangés par catégorie. |
 | **Ma base** | Dossier d'enregistrement, export JSON / CSV, restauration, reprise de l'ancienne base MySQL. |
 
@@ -98,7 +99,8 @@ js/ui.js                  outils d'interface (fenêtres, notifications, routeur)
 js/vue-*.js               un fichier par écran
 js/app.js                 démarrage et menu
 tests/                    tests du parseur (node --test) et test de bout en bout (Playwright)
-outils/                   scripts Python ayant servi à préparer la carte (étiquettes, outre-mer)
+outils/                   préparation de la carte (Python) et chiffrement des études de cas (outils/etudes.js)
+etudes/                   études de cas chiffrées (etudes.js) et leurs images
 ```
 
 Le fichier `geneaddict.json` est lisible et modifiable à la main ; s'il change pendant que
@@ -107,6 +109,27 @@ quand la fenêtre reprend le focus.
 
 Tests : `npm test` (parseur), `npm run test:navigateur` (parcours complet dans Chrome,
 nécessite `npm install`).
+
+## Études de cas
+
+Le contenu est **chiffré** dans `etudes/etudes.js` : le mot de passe sert de clé, il n'est écrit
+nulle part, et sans lui le texte est illisible, même en lisant le code ou le dépôt GitHub.
+Les images sont dans `etudes/<année>/img/` (non chiffrées).
+
+Pour modifier une année ou y ajouter les réponses (Node 18 ou plus) :
+
+```sh
+node outils/etudes.js extraire 2023 <mot de passe des solutions>   # recrée etudes/sources/2023.json
+# … modifier etudes/sources/2023.json : champ "solution" de chaque défi, en HTML …
+node outils/etudes.js chiffrer etudes/sources/2023.json              # met à jour etudes/etudes.js
+```
+
+`etudes/sources/` contient le texte en clair (réponses comprises) : il est exclu de git.
+Pour une nouvelle année, copier un fichier source, changer `annee` et `motsDePasse`,
+déposer les images dans `etudes/<année>/img/`, puis `chiffrer`.
+
+Le chiffrement empêche de lire les réponses dans le code, mais un mot de passe court comme
+« 2023 » se devine : c'est une porte fermée pour une séance, pas un coffre-fort.
 
 ## Mettre le site en ligne (GitHub Pages)
 

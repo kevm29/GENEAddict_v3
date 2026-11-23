@@ -10,6 +10,7 @@
     ['documents', 'Documents', '☰'],
     ['saisie', 'Saisie rapide', '✎'],
     ['depouillements', 'Dépouillements', '▤'],
+    ['etudes', 'Études de cas', '✦'],
     ['liens', 'Liens', '↗'],
     ['donnees', 'Ma base', '⛁']
   ];

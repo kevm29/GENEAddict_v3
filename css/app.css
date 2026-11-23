@@ -223,8 +223,8 @@ details summary { cursor: pointer; color: var(--discret); }
 /* ------------------------------------------------ archives */
 .archives-grille { display: grid; grid-template-columns: minmax(340px, 1.35fr) minmax(320px, 1fr); gap: 16px; align-items: start; }
 .carte-zone { display: flex; flex-direction: column; margin: 0; }
-.zone-carte { flex: 1; min-height: 0; }
-.carte-boite { position: relative; height: 100%; }
+.zone-carte { flex: 1; min-height: 0; position: relative; }
+.carte-boite { position: absolute; inset: 0; }
 .carte-france { width: 100%; height: 100%; display: block; touch-action: none; user-select: none; }
 .carte-france.zoomee { cursor: grab; }
 .carte-france.glisse { cursor: grabbing; }
@@ -249,7 +249,7 @@ details summary { cursor: pointer; color: var(--discret); }
 /* écran Archives : tout tient dans la hauteur de la fenêtre, la colonne de droite défile seule */
 @media (min-width: 1101px) {
   .vue-archives { padding-bottom: 16px; }
-  .vue-archives .archives-grille { height: calc(100vh - 64px - 24px - 16px - 58px); }
+  .vue-archives .archives-grille { height: calc(100vh - 64px - 24px - 16px - 58px); grid-template-rows: minmax(0, 1fr); }
   .vue-archives .carte-zone { height: 100%; }
   .vue-archives .cote-droit { height: 100%; overflow-y: auto; padding-right: 4px; }
 }
@@ -311,6 +311,60 @@ details summary { cursor: pointer; color: var(--discret); }
 .options-fiche input[type=number] { width: 64px; }
 .choix-statuts { display: inline-flex; gap: 12px; flex-wrap: wrap; }
 .pages { display: flex; flex-direction: column; gap: 24px; align-items: center; }
+
+/* ------------------------------------------------ études de cas */
+.annees { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.annee { display: block; color: var(--texte); text-decoration: none !important; border: 1px solid transparent; }
+.annee:hover { border-color: var(--bleu); }
+.cadenas { font-size: 1.6rem; }
+.cadenas.grand { font-size: 2.6rem; }
+.mdp-etudes { max-width: 460px; margin: 30px auto; display: flex; flex-direction: column; gap: 12px; align-items: center; text-align: center; }
+.mdp-etudes input { width: 100%; font-size: 1.1rem; text-align: center; }
+.erreur-mdp { color: var(--rouge); margin: 0; }
+.badge-solutions { background: var(--vert); color: #0d2a06; font-weight: 700; font-size: .85rem; padding: 4px 10px; border-radius: 14px; }
+.couvertures { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 18px; }
+.couverture { position: relative; display: block; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; text-decoration: none !important; color: #222;
+  background: #fff var(--motif) repeat; background-size: 120px; box-shadow: var(--ombre); transition: transform .15s; }
+.couverture:hover { transform: translateY(-3px); }
+.couverture::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 27%; background: #fff; }
+.couv-photo { position: absolute; z-index: 1; left: 1.6%; top: 2.5%; bottom: 2.5%; width: 40%; }
+.couv-photo img { width: 100%; height: 100%; object-fit: cover; display: block; box-shadow: 0 2px 8px rgba(0, 0, 0, .25); }
+.couv-num { position: absolute; z-index: 2; right: 10px; top: 8px; background: rgba(14, 36, 49, .8); color: #fff; font-size: .75rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+.couv-texte { position: absolute; z-index: 2; left: 4%; right: 3%; bottom: 0; height: 27%; display: flex; align-items: center; gap: 12px; }
+.couv-titre { flex: 1; text-align: right; font-size: 1.2rem; font-weight: 300; text-transform: uppercase; letter-spacing: 1.5px; line-height: 1.1; color: #111; text-shadow: 0 0 6px #fff, 0 0 2px #fff; }
+.couv-sous { flex: 0 0 34%; border-left: 2px solid #1f77a8; padding-left: 10px; font-size: .8rem; color: #333; }
+.page-etude { background: #fff; color: #1b1b1b; border-radius: 6px; overflow: hidden; box-shadow: var(--ombre); max-width: 1200px; margin: 0 auto; }
+.etude-bandeau { height: 30px; background: var(--bandeau) repeat-x; background-size: auto 100%; }
+.etude-corps { padding: 18px 26px 26px; }
+.etude-titre { font-size: 1.15rem; text-decoration: underline; color: #111; margin-bottom: 12px; }
+.etude-sous { font-weight: 400; text-decoration: none; display: inline-block; color: #555; font-style: italic; }
+.page-etude a { color: #3f8f1f; text-decoration: underline; }
+.etude-colonnes { display: flex; gap: 26px; align-items: flex-start; }
+.etude-texte { flex: 1; min-width: 0; }
+.accroche { font-weight: 700; font-size: 1.12rem; margin: 6px 0 14px; }
+.defis-titre { color: #111; font-size: 1.1rem; font-weight: 500; text-decoration: underline; margin: 10px 0 8px; }
+.defis { list-style: none; counter-reset: defi; margin: 0; padding: 0; }
+.defis > li { counter-increment: defi; position: relative; padding: 0 0 14px 34px; line-height: 1.5; }
+.defis > li::before { content: counter(defi); position: absolute; left: 0; top: 1px; width: 22px; height: 22px; border: 1.5px solid #222; border-radius: 50%; font-size: .8rem; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+.indice { color: #555; font-size: .92em; white-space: normal; }
+.indice::before { content: '['; } .indice::after { content: ']'; }
+.bonus { font-variant: small-caps; font-weight: 600; }
+.reponse { margin-top: 6px; padding: 8px 12px; background: #eef8e8; border-left: 4px solid #3f8f1f; border-radius: 4px; }
+.reponse em { color: #777; }
+.remarque { margin-top: 8px; color: #444; font-style: italic; }
+.illus-larges { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.illus-larges figure { margin: 0; }
+.illus-larges img { max-width: 100%; max-height: 170px; display: block; border: 1px solid #ddd; }
+.illus-cote { flex: 0 0 min(34%, 360px); display: flex; flex-direction: column; gap: 12px; }
+.illus-cote figure { margin: 0; }
+.illus-cote img { width: 100%; display: block; border: 1px solid #ddd; }
+.page-etude figcaption { font-size: .82rem; color: #444; margin-top: 3px; }
+.nav-etudes { display: flex; justify-content: space-between; gap: 8px; max-width: 1200px; margin: 16px auto 0; flex-wrap: wrap; }
+.fil { color: inherit; }
+@media (max-width: 900px) {
+  .etude-colonnes { flex-direction: column; }
+  .illus-cote { flex-basis: auto; width: 100%; }
+}
 
 /* ------------------------------------------------ notifications */
 #toasts { position: fixed; right: 20px; bottom: 20px; z-index: 100; display: flex; flex-direction: column; gap: 8px; }

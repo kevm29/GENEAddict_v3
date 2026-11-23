@@ -296,6 +296,26 @@ fs.mkdirSync(OUT, { recursive: true });
     return { c: [c.categorie, c.sigle, c.site, c.url, c.id], r: [r.categorie, r.sigle], caen: !!GA_DONNEES.trouveCentre('SHD Caen'), n: GA_DONNEES.etat.data.centres.length }; });
   ok(mig.c.join('|') === 'AN|AN|Paris|https://perso.example/|c1' && mig.r.join('|') === 'AM|AM-RENNES' && mig.caen, 'migration v1 → v2 : ' + JSON.stringify(mig));
 
+  // ---- Études de cas protégées
+  await page.goto(APP + '#/etudes/2023');
+  await page.waitForSelector('.mdp-etudes');
+  await page.fill('[name=mdp]', 'mauvais'); await page.click('.mdp-etudes button');
+  await page.waitForSelector('.erreur-mdp:not([hidden])');
+  await page.fill('[name=mdp]', '2023'); await page.click('.mdp-etudes button');
+  await page.waitForSelector('.couverture');
+  ok((await page.$$eval('.couverture', (l) => l.length)) === 8, 'études 2023 : mauvais mot de passe refusé, « 2023 » ouvre les 8 études');
+  await page.click('.couverture:nth-child(5)');
+  await page.waitForSelector('.page-etude');
+  ok((await page.$$eval('.reponse', (l) => l.length)) === 0 && (await page.$$eval('.page-etude a[target=_blank]', (l) => l.length)) >= 5, 'TP 5 : liens cliquables, pas de réponses');
+  await page.click('[data-fermer-annee]');
+  await page.waitForSelector('.mdp-etudes');
+  await page.fill('[name=mdp]', '2023Solution'); await page.click('.mdp-etudes button');
+  await page.waitForSelector('.badge-solutions');
+  await page.goto(APP + '#/etudes/2023/tp3');
+  await page.waitForSelector('.reponse');
+  ok((await page.$$eval('.reponse', (l) => l.length)) === 5, '« 2023Solution » : réponses affichées');
+  await shot('23-etude-correction');
+
   // Mobile
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(APP + '#/documents');

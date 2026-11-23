@@ -5,3 +5,6 @@ package-lock.json
 geneaddict.json
 sauvegardes/
 a-importer/
+
+# études de cas : textes en clair et réponses (seule la version chiffrée etudes/etudes.js est publiée)
+etudes/sources/
