@@ -373,6 +373,16 @@ details summary { cursor: pointer; color: var(--discret); }
   border: 1.5px dashed color-mix(in srgb, var(--accent, #3f8f1f) 70%, #fff); border-radius: 4px; padding: 6px 10px; color-scheme: light; }
 .saisie-reponse:focus { outline: none; border-style: solid; border-color: var(--accent, #3f8f1f); background: color-mix(in srgb, var(--accent, #3f8f1f) 5%, #fff); }
 .saisie-reponse::placeholder { color: #999; }
+.champ-reponse { position: relative; margin-top: 6px; }
+.champ-reponse .saisie-reponse { margin-top: 0; padding-right: 38px; }
+.voile-reponse { min-height: 38px; padding: 7px 40px 7px 10px; border: 1.5px solid color-mix(in srgb, var(--accent, #3f8f1f) 70%, #fff); border-radius: 4px;
+  background: color-mix(in srgb, var(--accent, #3f8f1f) 8%, #fff); color: color-mix(in srgb, var(--accent, #3f8f1f) 70%, #000); letter-spacing: 3px; font-size: .8rem; user-select: none; }
+.voile-reponse::after { content: "réponse enregistrée"; margin-left: 10px; letter-spacing: 0; font-size: .78rem; font-style: italic; opacity: .75; }
+.oeil-reponse { position: absolute; top: 5px; right: 6px; width: 28px; height: 28px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%;
+  background: none; color: color-mix(in srgb, var(--accent, #3f8f1f) 80%, #000); cursor: pointer; opacity: .75; }
+.oeil-reponse:hover, .oeil-reponse:focus-visible { opacity: 1; background: color-mix(in srgb, var(--accent, #3f8f1f) 15%, #fff); }
+.oeil-reponse.ouvert::after { content: ""; position: absolute; width: 22px; height: 2px; background: currentColor; transform: rotate(-45deg); }
+.oeil-reponse[hidden], .voile-reponse[hidden] { display: none; }
 .barre-envoi { position: sticky; bottom: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 12px; padding: 10px 0 4px; background: #fff; border-top: 1px solid #e3e3e3; }
 .barre-envoi label { display: flex; align-items: center; gap: 8px; color: #333; font-weight: 600; font-size: .92rem; }
 .barre-envoi input { color: #1b1b1b; background: #fff; border: 1px solid #bbb; color-scheme: light; width: 220px; }

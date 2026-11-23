@@ -149,7 +149,7 @@
       if (d.intertitre) return '<li class="intertitre">' + esc(d.intertitre) + '</li>';
       if (d.note) return '<li class="note-defi">' + d.note + '</li>';
       var rep = c.solutions ? blocReponse(d, k++)
-        : '<textarea class="saisie-reponse" data-k="' + (k++) + '" rows="2" placeholder="Votre réponse…"></textarea>';
+        : champReponse(k++);
       return '<li class="' + (d.bonus ? 'defi bonus-defi' : 'defi') + '"><div>' + (d.bonus ? '<span class="bonus">Bonus</span> ' : '') + d.texte + '</div>' + rep + '</li>';
     }).join('') + '</ol>';
   }
@@ -216,6 +216,41 @@
     });
   }
 
+  var OEIL = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>';
+
+  // Zone de réponse : une fois validée (Entrée ou clic ailleurs), le texte est caché sous des
+  // points et ne se montre qu'avec le petit œil, pour éviter la copie par les voisins.
+  function champReponse(k) {
+    return '<div class="champ-reponse">'
+      + '<textarea class="saisie-reponse" data-k="' + k + '" rows="2" placeholder="Votre réponse… (Entrée pour valider)" title="Entrée : valider et masquer · Maj+Entrée : aller à la ligne"></textarea>'
+      + '<div class="voile-reponse" hidden title="Réponse enregistrée et masquée : cliquez sur l’œil pour la voir ou la modifier">●●●●●●●●</div>'
+      + '<button type="button" class="oeil-reponse" hidden title="Afficher / masquer ma réponse" aria-label="Afficher ou masquer ma réponse">' + OEIL + '</button>'
+      + '</div>';
+  }
+
+  function brancheMasque(z) {
+    var boite = z.parentNode, voile = U.$('.voile-reponse', boite), oeil = U.$('.oeil-reponse', boite);
+    function masque(oui) {
+      oui = oui && !!z.value.trim();
+      boite.classList.toggle('masquee', oui);
+      z.hidden = oui; voile.hidden = !oui;
+      oeil.hidden = !z.value.trim();
+      oeil.classList.toggle('ouvert', !oui);
+    }
+    z.addEventListener('blur', function () { masque(true); });
+    z.addEventListener('input', function () { oeil.hidden = !z.value.trim(); });
+    z.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter' && !ev.shiftKey && !ev.isComposing) { ev.preventDefault(); z.blur(); }
+    });
+    // garder le curseur dans la zone pendant le clic sur l'œil, sinon le blur remasque avant le clic
+    oeil.addEventListener('mousedown', function (ev) { ev.preventDefault(); });
+    oeil.addEventListener('click', function () {
+      if (boite.classList.contains('masquee')) { masque(false); z.focus(); z.setSelectionRange(z.value.length, z.value.length); z.dispatchEvent(new Event('input')); }
+      else z.blur();
+    });
+    masque(true);
+  }
+
   function brancheReponses(racine, annee, e) {
     var zones = U.$$('.saisie-reponse', racine);
     var defis = e.defis.filter(function (d) { return !d.intertitre && !d.note; });
@@ -223,6 +258,7 @@
       z.value = stockage(cleBrouillon(annee, e, z.dataset.k));
       ajuste(z);
       z.addEventListener('input', function () { stockage(cleBrouillon(annee, e, z.dataset.k), z.value); ajuste(z); });
+      brancheMasque(z);
     });
     function ajuste(z) { z.style.height = 'auto'; z.style.height = Math.min(z.scrollHeight + 2, 240) + 'px'; }
     var champNom = U.$('[data-participant]', racine);

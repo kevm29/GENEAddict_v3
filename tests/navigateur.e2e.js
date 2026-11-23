@@ -346,14 +346,20 @@ fs.mkdirSync(OUT, { recursive: true });
   await page.click('[data-fermer-annee]'); await page.waitForSelector('[name=mdp]');
   await page.fill('[name=mdp]', '2024'); await page.click('.mdp-etudes button');
   await page.waitForSelector('.couverture');
+  await page.evaluate(() => { GA_SUPABASE.url = ''; });
   await page.goto(APP + '#/etudes/2024/tp2'); await page.waitForSelector('.saisie-reponse');
   ok((await page.$$eval('.reponse', (l) => l.length)) === 0 && await page.$eval('[data-envoyer]', (b) => b.disabled),
     'énoncés : zones de réponse vides, envoi désactivé tant que Supabase n\'est pas configuré');
-  await page.fill('.saisie-reponse[data-k="0"]', 'Réponse de test');
+  await page.click('.saisie-reponse[data-k="0"]'); await page.keyboard.type('Réponse de test'); await page.keyboard.press('Enter');
+  ok(await page.isHidden('.saisie-reponse[data-k="0"]') && !(await page.textContent('.champ-reponse')).includes('Réponse de test'),
+    'réponse validée par Entrée : masquée sous des points');
+  await page.click('.oeil-reponse >> nth=0');
+  ok(await page.isVisible('.saisie-reponse[data-k="0"]'), 'le petit œil la réaffiche');
   await page.evaluate(() => { GA_SUPABASE.url = 'https://test.supabase.co'; GA_SUPABASE.cle = 'sb_publishable_TEST'; });
   await page.goto(APP + '#/etudes/2024/tp1'); await page.goto(APP + '#/etudes/2024/tp2');
   await page.waitForSelector('[data-envoyer]:not([disabled])');
-  ok((await page.inputValue('.saisie-reponse[data-k="0"]')) === 'Réponse de test', 'brouillon de réponse conservé');
+  ok((await page.inputValue('.saisie-reponse[data-k="0"]')) === 'Réponse de test' && await page.isHidden('.saisie-reponse[data-k="0"]'),
+    'brouillon de réponse conservé, masqué au retour');
   await page.fill('[data-participant]', 'Test');
   await page.click('[data-envoyer]');
   await page.waitForFunction(() => /Envoyé le/.test(document.querySelector('.etat-envoi').textContent));
