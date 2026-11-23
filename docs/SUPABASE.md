@@ -91,6 +91,11 @@ delete from reponses_etudes where annee = '2025';
 - Sur l'offre gratuite, Supabase **met en pause un projet inactif** (au bout d'environ une semaine
   sans requête). Avant une séance, ouvrez le tableau de bord : s'il est en pause, cliquez sur
   *Restore project* (une à deux minutes).
+- Un projet en pause se **réactive d'un clic pendant 1 an** (90 jours selon les anciennes règles,
+  certaines pages de Supabase le disent encore). Passé ce délai, il ne se relance plus : il faut
+  télécharger la sauvegarde proposée sur la page du projet et la restaurer dans un nouveau projet
+  (puis changer l'URL et la clé dans `etudes/supabase.js`). L'offre gratuite n'a pas de sauvegardes
+  automatiques : **exportez la table en CSV après chaque séance**.
 - Chaque envoi ajoute des lignes : si un participant renvoie après correction, l'ancienne
   version reste visible dans la table ; la vue `reponses_etudes_dernieres` ne montre que la plus récente.
 - Rien n'empêche un participant de taper le nom de quelqu'un d'autre : c'est un outil de séance,

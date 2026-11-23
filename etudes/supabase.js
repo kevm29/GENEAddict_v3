@@ -5,7 +5,7 @@
  * Ne jamais mettre ici la clé secrète (sb_secret_… / service_role).
  * Tant que ces deux valeurs sont vides, les réponses restent seulement dans le navigateur. */
 window.GA_SUPABASE = {
-  url: '',          // ex. 'https://abcdefghijklmnop.supabase.co'
-  cle: '',          // ex. 'sb_publishable_xxxxxxxxxxxxxxxxxxxxxx_xxxxxxxx'
+  url: 'https://cympsyiryojlzyiadovg.supabase.co',
+  cle: 'sb_publishable_RLaO61bq7k-8lFrUz_mgkA_YHPQnr4C',
   table: 'reponses_etudes'
 };
