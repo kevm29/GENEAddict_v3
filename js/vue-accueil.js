@@ -14,7 +14,7 @@
     }
     if (!D.dossierPossible) {
       return '<div class="carte bandeau alerte"><div><h2>Vos données restent dans ce navigateur</h2>' +
-        '<p>Ce navigateur ne sait pas écrire directement dans un fichier. Pour un enregistrement automatique dans un dossier, ouvrez GENEAddict avec <strong>Chrome</strong> ou <strong>Edge</strong> : sous Windows, double-cliquez simplement sur <code>GENEAddict.bat</code> (dans le dossier de l\'application). Attention : les données saisies ici restent dans ce navigateur-ci ; exportez-les depuis <a href="#/donnees">Ma base</a> pour les reprendre ailleurs. Sinon, pensez à <a href="#/donnees">exporter votre base</a> régulièrement.</p></div></div>';
+        '<p>Ce navigateur ne sait pas écrire directement dans un fichier. Pour un enregistrement automatique dans un dossier, ouvrez GENEAddict avec <strong>Chrome</strong> ou <strong>Edge</strong>. Sinon, pensez à <a href="#/donnees">exporter votre base</a> régulièrement.</p></div></div>';
     }
     return '<div class="carte bandeau"><div><h2>Où ranger votre base ?</h2>' +
       '<p>Choisissez un dossier (par exemple <em>Documents/Généalogie</em>, ou un dossier OneDrive / Dropbox pour l\'avoir sur plusieurs ordinateurs). ' +
