@@ -325,7 +325,7 @@ details summary { cursor: pointer; color: var(--discret); }
 .badge-solutions { background: var(--vert); color: #0d2a06; font-weight: 700; font-size: .85rem; padding: 4px 10px; border-radius: 14px; }
 .couvertures { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 18px; }
 .couverture { position: relative; display: block; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; text-decoration: none !important; color: #222;
-  background: #fff var(--motif) repeat; background-size: 120px; box-shadow: var(--ombre); transition: transform .15s; }
+  background: #fff var(--motif) repeat; background-size: 107px; box-shadow: var(--ombre); transition: transform .15s; }
 .couverture:hover { transform: translateY(-3px); }
 .couverture::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 27%; background: #fff; }
 .couv-photo { position: absolute; z-index: 1; left: 1.6%; top: 2.5%; bottom: 2.5%; width: 40%; }
