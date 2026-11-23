@@ -299,6 +299,8 @@
           z.dispatchEvent(new Event('blur'));
           ajuste(z);
         });
+        champNom.value = '';
+        try { localStorage.removeItem(CLE_PARTICIPANT); } catch (x) { /* stockage indisponible */ }
         U.toast(n + ' réponse' + (n > 1 ? 's envoyées' : ' envoyée') + '. Merci !', 'ok');
       }).catch(function (err) {
         etat.textContent = err.message.indexOf('Supabase') === 0 ? err.message : 'Envoi impossible (connexion ?) : vos réponses restent gardées ici.';
