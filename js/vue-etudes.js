@@ -78,7 +78,7 @@
   }
 
   function listeAnnees(racine) {
-    var annees = Object.keys(root.GA_ETUDES || {}).sort().reverse();
+    var annees = Object.keys(root.GA_ETUDES || {}).sort();
     racine.innerHTML = '<div class="titre-vue"><h1>Études de cas</h1></div>' +
       (annees.length ? '<div class="annees">' + annees.map(function (k) {
         var a = root.GA_ETUDES[k], o = ouvertes[k];
@@ -90,7 +90,7 @@
 
   function formulaire(racine, annee) {
     var a = root.GA_ETUDES[annee];
-    racine.innerHTML = '<div class="titre-vue"><h1>' + esc(a.titre) + '</h1><div class="actions-titre"><a class="btn" href="#/etudes">← Toutes les années</a></div></div>' +
+    racine.innerHTML = '<div class="titre-vue"><h1>' + esc(a.titre) + '</h1><div class="actions-titre"><a class="btn" href="#/etudes">← Retour</a></div></div>' +
       '<form class="carte mdp-etudes"><span class="cadenas grand">🔒</span><p>Ces études de cas sont protégées. Saisissez le mot de passe donné en séance.</p>' +
       '<input type="password" name="mdp" autocomplete="off" placeholder="Mot de passe" required>' +
       '<button class="btn principal">Ouvrir</button><p class="erreur-mdp" hidden></p></form>';
@@ -111,10 +111,23 @@
     });
   }
 
-  function barreAnnee(annee, c, navigation) {
-    return '<div class="actions-titre">' + (navigation || '') +
+  /* « Retour » ramène à la liste des années, toutes reverrouillées. */
+  function barreAnnee(annee, c, avant, apres) {
+    return '<div class="actions-titre">' + (avant || '') +
       (c.solutions ? '<span class="badge-solutions">Mode correction</span>' : '') +
-      '<button class="btn" data-fermer-annee title="Redemander le mot de passe">🔒 Verrouiller</button></div>';
+      '<button class="btn" data-retour title="Revenir aux années (le mot de passe sera redemandé)">← Retour</button>' + (apres || '') + '</div>';
+  }
+
+  function retour() {
+    Object.keys(root.GA_ETUDES || {}).forEach(ferme);
+    U.va('etudes', []);
+  }
+
+  /* Contenu d'une couverture (vignette de la grille ou première diapositive d'un TP). */
+  function contenuCouverture(annee, e, i) {
+    return '<span class="couv-photo"><img src="' + img(annee, e.couverture) + '" alt=""></span>' +
+      '<span class="couv-num">TP ' + (i + 1) + '</span>' + epoque(e) +
+      '<span class="couv-texte"><span class="couv-titre">' + esc(e.titre) + '</span><span class="couv-sous' + ((e.sousTitre || '').length > 40 ? ' long' : '') + '">' + esc(e.sousTitre) + '</span></span>';
   }
 
   function styleAnnee(annee, c) {
@@ -130,9 +143,7 @@
     racine.innerHTML = '<div class="titre-vue"><h1>' + esc(c.titre) + '</h1>' + barreAnnee(annee, c) + '</div>' +
       '<div class="couvertures" style="' + styleAnnee(annee, c) + '">' + c.etudes.map(function (e, i) {
         return '<a class="couverture" href="#/etudes/' + encodeURIComponent(annee) + '/' + encodeURIComponent(e.id) + '">' +
-          '<span class="couv-photo"><img src="' + img(annee, e.couverture) + '" alt="" loading="lazy"></span>' +
-          '<span class="couv-num">TP ' + (i + 1) + '</span>' + epoque(e) +
-          '<span class="couv-texte"><span class="couv-titre">' + esc(e.titre) + '</span><span class="couv-sous">' + esc(e.sousTitre) + '</span></span></a>';
+          contenuCouverture(annee, e, i) + '</a>';
       }).join('') + '</div>';
   }
 
@@ -296,11 +307,22 @@
     });
   }
 
-  function detail(racine, annee, c, idEtude) {
+  /* Première diapositive d'un TP : sa couverture en grand, puis « Suivant » vers les défis. */
+  function diapoCouverture(racine, annee, c, e, i) {
+    var suite = '#/etudes/' + encodeURIComponent(annee) + '/' + encodeURIComponent(e.id) + '/defis';
+    racine.innerHTML =
+      '<div class="titre-vue"><h1>' + esc(c.titre) + ' · TP ' + (i + 1) + '</h1>' +
+      barreAnnee(annee, c, '', '<a class="btn principal" href="' + suite + '">Suivant →</a>') + '</div>' +
+      '<div class="scene-diapo"><a class="couverture diapo" href="' + suite + '" title="Voir les défis" style="' + styleAnnee(annee, c) + '">' +
+      contenuCouverture(annee, e, i) + '</a></div>';
+    racine.scrollTop = 0; root.scrollTo(0, 0);
+  }
+
+  function detail(racine, annee, c, idEtude, page) {
     var i = c.etudes.findIndex(function (e) { return e.id === idEtude; });
     if (i < 0) { U.va('etudes', [annee]); return; }
-    var e = c.etudes[i], prec = c.etudes[i - 1], suiv = c.etudes[i + 1];
-    var lien = function (x) { return '#/etudes/' + encodeURIComponent(annee) + '/' + encodeURIComponent(x.id); };
+    var e = c.etudes[i];
+    if (page !== 'defis') { diapoCouverture(racine, annee, c, e, i); return; }
     var illus = e.illustrations || [];
     var larges = figures(annee, illus.filter(function (il) { return il.large; }));
     var cote = figures(annee, illus.filter(function (il) { return !il.large; }));
@@ -311,9 +333,7 @@
     racine.innerHTML =
       '<div class="titre-vue"><h1><a href="#/etudes/' + encodeURIComponent(annee) + '" class="fil">' + esc(c.titre) + '</a> · TP ' + (i + 1) + '</h1>' +
       barreAnnee(annee, c,
-        (c.solutions ? '<button class="btn" data-tout="1">Tout révéler</button><button class="btn" data-tout="0">Tout masquer</button>' : '') +
-        (prec ? '<a class="btn" href="' + lien(prec) + '" title="' + esc(prec.titre) + '">← TP ' + i + '</a>' : '') +
-        (suiv ? '<a class="btn" href="' + lien(suiv) + '" title="' + esc(suiv.titre) + '">TP ' + (i + 2) + ' →</a>' : '')) + '</div>' +
+        (c.solutions ? '<button class="btn" data-tout="1">Tout révéler</button><button class="btn" data-tout="0">Tout masquer</button>' : '')) + '</div>' +
       '<article class="page-etude" style="' + styleAnnee(annee, c) + '">' +
       '<div class="etude-bandeau"></div>' +
       '<div class="etude-corps"><h2 class="etude-titre"><span class="t">' + esc(e.titre) + '</span> <span class="etude-sous">— ' + esc(e.sousTitre) + '</span>' +
@@ -344,8 +364,8 @@
     function suite() {
       var c = ouvertes[annee];
       if (!c) { formulaire(racine, annee); return; }
-      if (idEtude) detail(racine, annee, c, idEtude); else grille(racine, annee, c);
-      U.on(racine, 'click', '[data-fermer-annee]', function () { ferme(annee); U.va('etudes', [annee]); });
+      if (idEtude) detail(racine, annee, c, idEtude, route.args[2]); else grille(racine, annee, c);
+      U.on(racine, 'click', '[data-retour]', retour);
     }
     if (ouvertes[annee]) suite();
     else {

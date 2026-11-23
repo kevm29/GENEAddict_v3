@@ -325,16 +325,24 @@ details summary { cursor: pointer; color: var(--discret); }
 .badge-solutions { background: var(--vert); color: #0d2a06; font-weight: 700; font-size: .85rem; padding: 4px 10px; border-radius: 14px; }
 .couvertures { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 18px; }
 .couverture { position: relative; display: block; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; text-decoration: none !important; color: #222;
-  background: #fff var(--motif) repeat; background-size: 107px; box-shadow: var(--ombre); transition: transform .15s; }
+  background: #fff var(--motif) repeat; background-size: 26.75% auto; box-shadow: var(--ombre); transition: transform .15s; container-type: inline-size; }
+.couverture.diapo { border-radius: 12px; }
+.couverture.diapo:hover { transform: none; }
+.couv-sous.long { font-size: 2.9cqw; flex-basis: 40%; }
+.scene-diapo { display: flex; justify-content: center; }
+.scene-diapo .diapo { width: min(100%, 1400px, calc((100vh - 64px - 110px) * 16 / 9)); }
 .couverture:hover { transform: translateY(-3px); }
 .couverture::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 27%; background: #fff; }
 .couv-photo { position: absolute; z-index: 1; left: 1.6%; top: 2.5%; bottom: 2.5%; width: 40%; }
 .couv-photo img { width: 100%; height: 100%; object-fit: cover; display: block; box-shadow: 0 2px 8px rgba(0, 0, 0, .25); }
-.couv-num { position: absolute; z-index: 2; right: 10px; top: 8px; background: rgba(14, 36, 49, .8); color: #fff; font-size: .75rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
-.couv-texte { position: absolute; z-index: 2; left: 4%; right: 3%; bottom: 0; height: 27%; display: flex; align-items: center; gap: 12px; }
-.couv-titre { flex: 1; text-align: right; font-size: 1.2rem; font-weight: 300; text-transform: uppercase; letter-spacing: 1.5px; line-height: 1.1; color: #111; text-shadow: 0 0 6px #fff, 0 0 2px #fff; }
-.couv-epoque { position: absolute; z-index: 2; right: 3%; bottom: 28%; font-weight: 700; font-size: .85rem; letter-spacing: 1px; color: #111; background: #fff; padding: 1px 8px; border-radius: 3px; }
-.couv-sous { flex: 0 0 34%; border-left: 2px solid var(--accent, #1f77a8); padding-left: 10px; font-size: .8rem; color: #333; }
+.couv-num { position: absolute; z-index: 2; right: 2.5cqw; top: 2cqw; background: rgba(14, 36, 49, .8); color: #fff; font-size: max(11px, 2.6cqw); font-weight: 700; padding: .4cqw 2cqw; border-radius: 3cqw; }
+.couv-texte { position: absolute; z-index: 2; left: 4%; right: 3%; bottom: 0; height: 27%; display: flex; align-items: center; gap: 3cqw; }
+/* contour blanc autour des lettres, pour qu'elles restent lisibles sur la photo */
+.couv-titre { flex: 1; text-align: right; font-size: 4.6cqw; font-weight: 400; text-transform: uppercase; letter-spacing: .35cqw; line-height: 1.1; color: #111;
+  text-shadow: 0.085em 0.000em 0 #fff, 0.079em 0.033em 0 #fff, 0.060em 0.060em 0 #fff, 0.033em 0.079em 0 #fff, 0.000em 0.085em 0 #fff, -0.033em 0.079em 0 #fff, -0.060em 0.060em 0 #fff, -0.079em 0.033em 0 #fff, -0.085em 0.000em 0 #fff, -0.079em -0.033em 0 #fff, -0.060em -0.060em 0 #fff, -0.033em -0.079em 0 #fff, -0.000em -0.085em 0 #fff, 0.033em -0.079em 0 #fff, 0.060em -0.060em 0 #fff, 0.079em -0.033em 0 #fff, 0 0 .3em #fff; }
+.couv-epoque { position: absolute; z-index: 2; right: 3%; bottom: 28%; font-weight: 700; font-size: 3.2cqw; letter-spacing: .25cqw; color: #111; background: #fff; padding: .2cqw 2cqw; border-radius: .8cqw; }
+.couv-sous { flex: 0 0 37%; max-height: 92%; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4;
+  border-left: .5cqw solid var(--accent, #1f77a8); padding-left: 2.5cqw; font-size: 3.3cqw; line-height: 1.2; color: #333; }
 .page-etude { background: #fff; color: #1b1b1b; border-radius: 6px; overflow: hidden; box-shadow: var(--ombre); max-width: 1200px; margin: 0 auto; }
 .etude-bandeau { height: 30px; background: var(--bandeau) repeat-x; background-size: auto 100%; }
 .etude-corps { padding: 18px 26px 26px; }
