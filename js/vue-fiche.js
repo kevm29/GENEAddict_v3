@@ -46,7 +46,7 @@
     var infosCentre = c ? [c.adresse, c.horaires].filter(Boolean).join(' · ') : '';
     return '<section class="papier">' +
       '<header class="papier-tete"><div><div class="papier-marque">GENEAddict · fiche de consultation</div>' +
-      '<h1>' + esc(c ? c.nom : 'Sans centre') + '</h1>' +
+      '<h1>' + esc(c ? root.GA_INIT.nomSimple(c) : 'Sans centre') + '</h1>' +
       (infosCentre ? '<p class="papier-infos">' + esc(infosCentre) + '</p>' : '') + '</div>' +
       '<table class="papier-champs"><tr><th>Date de visite</th><td>' + esc(o.dateVisite || '') + '</td></tr>' +
       '<tr><th>N° de lecteur</th><td>' + esc(c && c.lecteur || '') + '</td></tr></table></header>' +
@@ -56,9 +56,30 @@
         return '<li>' + [esc(x.titre), x.cote ? '<span class="cote">' + esc(x.cote) + '</span>' : '', esc(x.periode),
           x.pagesTotal ? x.pagesFaites + ' / ' + x.pagesTotal + ' p., reprendre p. ' + (x.pagesFaites + 1) : ''].filter(Boolean).join(' — ') + '</li>';
       }).join('') + '</ul>' : '') +
-      (o.cadre ? '<h2>Notes</h2><div class="papier-lignes"></div>' : '') +
+      (o.cadre ? '<div class="zone-notes"></div>' : '') +
       '<footer class="papier-pied">' + docs.length + ' document' + (docs.length > 1 ? 's' : '') + ' · imprimé le ' + esc(new Date().toLocaleDateString('fr-FR')) + '</footer>' +
       '</section>';
+  }
+
+  /* Lignes de notes : autant qu'il en faut pour finir la dernière page A4, aucune s'il ne reste
+   * pas la place. On mesure la fiche telle qu'elle sera imprimée (zone utile A4 portrait :
+   * 186 × 273 mm avec des marges de 12 mm). */
+  var MM = 96 / 25.4, PAGE_L = 186, PAGE_H = 273, LIGNE = 9, TITRE_NOTES = 10, MARGE_SECURITE = 6;
+  function remplitNotes(conteneur) {
+    U.$$('section.papier', conteneur).forEach(function (sec) {
+      var zone = U.$('.zone-notes', sec);
+      if (!zone) return;
+      zone.innerHTML = '';
+      var clone = sec.cloneNode(true);
+      clone.style.cssText = 'position:absolute;left:-10000px;top:0;visibility:hidden;width:' + PAGE_L + 'mm;max-width:none;padding:0;box-shadow:none';
+      document.body.appendChild(clone);
+      var hauteur = clone.getBoundingClientRect().height / MM;   // en mm
+      clone.remove();
+      var occupe = hauteur % PAGE_H;
+      var reste = PAGE_H - occupe - MARGE_SECURITE - TITRE_NOTES;
+      var n = Math.floor(reste / LIGNE);
+      if (n >= 1) zone.innerHTML = '<h2>Notes</h2><div class="papier-lignes" style="height:' + (n * LIGNE) + 'mm"></div>';
+    });
   }
 
   function rendu(racine, route) {
@@ -97,7 +118,7 @@
       '<label>Date de visite <input name="date" type="date" value="' + esc(p.date) + '"></label>' +
       '<label class="case"><input type="checkbox" name="notes"' + (p.notes === '1' ? ' checked' : '') + '> Rappeler mes annotations</label>' +
       '<label>Lignes vides <input name="vides" type="number" min="0" max="30" value="' + esc(p.vides) + '"></label>' +
-      '<label class="case"><input type="checkbox" name="cadre"' + (p.cadre === '1' ? ' checked' : '') + '> Cadre de notes</label>' +
+      '<label class="case"><input type="checkbox" name="cadre"' + (p.cadre === '1' ? ' checked' : '') + '> Finir la page avec des lignes de notes</label>' +
       '</form>' +
       '<div class="pages"></div>';
 
@@ -108,6 +129,7 @@
       var o = { notes: p.notes === '1', vides: p.vides, cadre: p.cadre === '1', dateVisite: dateVisite };
       if (!parIds && !p.centre) { pages.innerHTML = '<div class="carte">Choisissez un centre.</div>'; return; }
       pages.innerHTML = Object.keys(g).map(function (k) { return pageCentre(D.centreParId(k), g[k], o); }).join('');
+      remplitNotes(pages);
     }
 
     var f = U.$('.options-fiche', racine);

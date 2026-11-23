@@ -29,7 +29,9 @@
 .papier .select-statut.statut-demande { color: #006c99; }
 .papier .select-statut.statut-chercher { color: #9a6200; }
 .papier .select-statut.statut-perdu { color: #b3261e; }
-.papier-lignes { height: 45mm; background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 8.5mm, #bbb 8.5mm, #bbb 9mm); }
+.papier-lignes { height: 45mm; background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 8.6mm, #bbb 8.6mm, #bbb 9mm); }
+.zone-notes { break-inside: avoid; }
+.papier h2 { break-after: avoid; }
 .papier-detail { border-collapse: collapse; width: 100%; }
 .papier-detail th { text-align: left; width: 35mm; color: #555; font-weight: 400; padding: 3px 6px 3px 0; vertical-align: top; }
 .papier-detail td { padding: 3px 0; border-bottom: 1px dotted #bbb; }

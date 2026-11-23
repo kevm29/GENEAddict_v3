@@ -10,9 +10,10 @@
     ['documents', 'Documents', '☰'],
     ['saisie', 'Saisie rapide', '✎'],
     ['depouillements', 'Dépouillements', '▤'],
-    ['etudes', 'Études de cas', '✦'],
     ['liens', 'Liens', '↗'],
-    ['donnees', 'Ma base', '⛁']
+    ['donnees', 'Ma base', '⛁'],
+    null,
+    ['etudes', 'Études de cas', '✦']
   ];
 
   function menu() {
@@ -20,6 +21,7 @@
     var docs = D.etat.data.documents;
     var aChercher = docs.filter(function (d) { return d.statut === 'chercher'; }).length;
     U.$('#menu').innerHTML = MENU.map(function (m) {
+      if (!m) return '<hr class="menu-sep">';
       var actif = r.vue === m[0] || (m[0] === 'archives' && r.vue === 'fiche');
       var badge = m[0] === 'documents' && aChercher ? '<span class="badge" title="À chercher">' + aChercher + '</span>' : '';
       return '<a href="#/' + m[0] + '" class="' + (actif ? 'actif' : '') + '"><span class="ico">' + m[2] + '</span>' + esc(m[1]) + badge + '</a>';

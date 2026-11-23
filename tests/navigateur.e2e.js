@@ -296,6 +296,15 @@ fs.mkdirSync(OUT, { recursive: true });
     return { c: [c.categorie, c.sigle, c.site, c.url, c.id], r: [r.categorie, r.sigle], caen: !!GA_DONNEES.trouveCentre('SHD Caen'), n: GA_DONNEES.etat.data.centres.length }; });
   ok(mig.c.join('|') === 'AN|AN|Paris|https://perso.example/|c1' && mig.r.join('|') === 'AM|AM-RENNES' && mig.caen, 'migration v1 → v2 : ' + JSON.stringify(mig));
 
+  // ---- Migration v2 → v3 : sigles SHD, sites des AD, précisions personnelles conservées
+  await page.evaluate(() => GA_DONNEES.remplaceBase(JSON.stringify({ app: 'GENEAddict', version: 2, documents: [], liens: [], balises: [], depouillements: [], centres: [
+    { id: 'k1', code: 'SHD-CAEN', categorie: 'SHD', sigle: 'SHD', groupe: 'Service historique de la Défense', site: 'Caen', detail: 'Centre des archives de Caen (ex-DAVCC, victimes des conflits contemporains)', dep: '', url: 'https://www.servicehistorique.sga.defense.gouv.fr/', nom: 'x' },
+    { id: 'k2', code: 'SHD-PAU', categorie: 'SHD', sigle: 'SHD', groupe: 'Service historique de la Défense', site: 'Pau', detail: 'ma précision', dep: '', url: 'https://perso.example/', nom: 'x' },
+    { id: 'k3', code: 'AD01', categorie: 'AD', sigle: 'AD', groupe: 'Archives départementales', site: 'Ain', detail: '', dep: '01', url: '', nom: 'x' }] })));
+  const v3 = await page.evaluate(() => ['k1', 'k2', 'k3'].map((i) => { const c = GA_DONNEES.centreParId(i); return [c.detail, c.url, GA_INIT.nomSimple(c)].join(' | '); }));
+  ok(v3[0].startsWith('CACn | https://www.servicehistorique.sga.defense.gouv.fr/le-shd-en-france/centre-des-archives-de-caen | Service historique de la Défense — Caen (CACn)') &&
+    v3[1].startsWith('ma précision | https://perso.example/') && v3[2].startsWith(' | https://www.archives.ain.fr/'), 'migration v2 → v3 : ' + JSON.stringify(v3));
+
   // ---- Études de cas protégées
   await page.goto(APP + '#/etudes/2023');
   await page.waitForSelector('.mdp-etudes');
@@ -318,9 +327,9 @@ fs.mkdirSync(OUT, { recursive: true });
 
   // Mobile
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(APP + '#/documents');
-  await page.waitForSelector('.table-docs');
-  await shot('14-mobile-documents');
+  await page.goto(APP + '#/accueil');
+  await page.waitForSelector('.stats');
+  await shot('14-mobile-accueil');
 
   console.log(erreurs.length ? '\nERREURS :\n' + erreurs.join('\n') : '\nAucune erreur JavaScript.');
   await browser.close();

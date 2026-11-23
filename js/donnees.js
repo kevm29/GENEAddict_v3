@@ -19,7 +19,7 @@
   var DOSSIER_IMPORT = 'a-importer';
   var DOSSIER_IMPORTES = 'importes';
   var NB_SAUVEGARDES = 30;
-  var VERSION = 2;
+  var VERSION = 3;
 
   // ------------------------------------------------------------ IndexedDB (copie locale + dossier mémorisé)
 
@@ -80,6 +80,31 @@
     };
   }
 
+  /* Valeurs proposées par la version 2, remplacées en version 3 si l'utilisateur ne les a pas modifiées. */
+  var ANCIENNES_PRECISIONS = [
+    'CARAN — Minutier central des notaires', 'Centre historique des archives',
+    'Centre des archives de Caen (ex-DAVCC, victimes des conflits contemporains)',
+    'Centre des archives du personnel militaire (CAPM)', 'Centre des archives de l\'armement et du personnel civil (CAAPC)',
+    'Archives intermédiaires de la gendarmerie nationale', 'Archives de la Marine', 'Archives de Paris (Ville de Paris)',
+    'Centre des archives économiques et financières', 'Archives de la Compagnie de Jésus en France',
+    'ex-ITS, Service international de recherches'
+  ];
+  var ANCIENNES_URL = ['https://www.servicehistorique.sga.defense.gouv.fr/'];
+
+  /* Version 2 → 3 : noms officiels des centres du SHD, précisions raccourcies, sites de toutes les AD. */
+  function migreV3(d) {
+    var deps = root.GA_CARTE ? root.GA_CARTE.departements : [];
+    var parCode = {};
+    root.GA_INIT.centresParDefaut(deps).forEach(function (c) { parCode[S.cle(c.code)] = c; });
+    d.centres.forEach(function (c) {
+      var def = parCode[S.cle(c.code)];
+      if (!def) return;
+      if (ANCIENNES_PRECISIONS.indexOf(c.detail) >= 0) c.detail = def.detail;
+      if (!c.url || ANCIENNES_URL.indexOf(c.url) >= 0) c.url = def.url;
+      c.nom = root.GA_INIT.nomComplet(c);
+    });
+  }
+
   /* Version 1 → 2 : catégories, sigle / groupe / site pour les centres, nouveaux centres proposés. */
   function migreCentres(d) {
     var deps = root.GA_CARTE ? root.GA_CARTE.departements : [];
@@ -113,6 +138,7 @@
     d.liens = d.liens || [];
     d.balises = d.balises || [];
     if (!d.version || d.version < 2) migreCentres(d);
+    if (d.version < 3) migreV3(d);
     d.centres.forEach(function (c) {
       ['sigle', 'groupe', 'site', 'detail', 'dep', 'url', 'entraide', 'adresse', 'horaires', 'lecteur', 'notes'].forEach(function (k) { if (c[k] == null) c[k] = ''; });
       if (!c.categorie) c.categorie = 'AUTRE';

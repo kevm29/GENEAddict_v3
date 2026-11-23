@@ -112,8 +112,8 @@
     });
   }
 
-  function barreAnnee(annee, c) {
-    return '<div class="actions-titre">' +
+  function barreAnnee(annee, c, navigation) {
+    return '<div class="actions-titre">' + (navigation || '') +
       (c.solutions ? '<span class="badge-solutions">Mode correction</span>' +
         '<button class="btn" data-bascule>' + (masquerReponses ? 'Afficher les réponses' : 'Masquer les réponses') + '</button>' : '') +
       '<button class="btn" data-fermer-annee title="Redemander le mot de passe">🔒 Verrouiller</button></div>';
@@ -141,22 +141,21 @@
     var larges = (e.illustrations || []).map(function (il, k) { return il.large ? illus[k] : ''; }).join('');
     var cote = (e.illustrations || []).map(function (il, k) { return il.large ? '' : illus[k]; }).join('');
     racine.innerHTML =
-      '<div class="titre-vue"><h1><a href="#/etudes/' + encodeURIComponent(annee) + '" class="fil">' + esc(c.titre) + '</a> · TP ' + (i + 1) + '</h1>' + barreAnnee(annee, c) + '</div>' +
+      '<div class="titre-vue"><h1><a href="#/etudes/' + encodeURIComponent(annee) + '" class="fil">' + esc(c.titre) + '</a> · TP ' + (i + 1) + '</h1>' +
+      barreAnnee(annee, c, (prec ? '<a class="btn" href="' + lien(prec) + '" title="' + esc(prec.titre) + '">← TP ' + i + '</a>' : '') +
+        (suiv ? '<a class="btn" href="' + lien(suiv) + '" title="' + esc(suiv.titre) + '">TP ' + (i + 2) + ' →</a>' : '')) + '</div>' +
       '<article class="page-etude" style="--bandeau:' + esc(imgCss(annee, 'bandeau.jpg')) + '">' +
       '<div class="etude-bandeau"></div>' +
       '<div class="etude-corps"><h2 class="etude-titre">' + esc(e.titre) + ' <span class="etude-sous">— ' + esc(e.sousTitre) + '</span></h2>' +
-      (larges ? '<div class="illus-larges">' + larges + '</div>' : '') +
       '<div class="etude-colonnes"><div class="etude-texte">' +
+      (larges ? '<div class="illus-larges">' + larges + '</div>' : '') +
       '<p class="accroche">→ ' + esc(e.accroche) + '</p>' +
       '<h3 class="defis-titre">Défis</h3><ol class="defis">' + e.defis.map(function (d) {
         var rep = c.solutions && !masquerReponses ? '<div class="reponse">' + (d.solution ? '<strong>Réponse : </strong>' + d.solution : '<em>Réponse à venir.</em>') + '</div>' : '';
         return '<li><div>' + d.texte + '</div>' + rep + '</li>';
       }).join('') + '</ol>' +
       (e.remarque ? '<p class="remarque">' + e.remarque + '</p>' : '') + '</div>' +
-      (cote ? '<aside class="illus-cote">' + cote + '</aside>' : '') + '</div></div></article>' +
-      '<nav class="nav-etudes">' + (prec ? '<a class="btn" href="' + lien(prec) + '">← ' + esc(prec.titre) + '</a>' : '<span></span>') +
-      '<a class="btn" href="#/etudes/' + encodeURIComponent(annee) + '">Toutes les études</a>' +
-      (suiv ? '<a class="btn" href="' + lien(suiv) + '">' + esc(suiv.titre) + ' →</a>' : '<span></span>') + '</nav>';
+      (cote ? '<aside class="illus-cote">' + cote + '</aside>' : '') + '</div></div></article>';
     liensExternes(racine);
     racine.scrollTop = 0; root.scrollTo(0, 0);
   }
