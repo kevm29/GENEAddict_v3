@@ -9,7 +9,6 @@
 
   var U = root.GA_UI, esc = U.esc;
   var ouvertes = {};   // annee → contenu déchiffré
-  var masquerReponses = false;
 
   // ---------------------------------------------------------------- déchiffrement
 
@@ -114,19 +113,51 @@
 
   function barreAnnee(annee, c, navigation) {
     return '<div class="actions-titre">' + (navigation || '') +
-      (c.solutions ? '<span class="badge-solutions">Mode correction</span>' +
-        '<button class="btn" data-bascule>' + (masquerReponses ? 'Afficher les réponses' : 'Masquer les réponses') + '</button>' : '') +
+      (c.solutions ? '<span class="badge-solutions">Mode correction</span>' : '') +
       '<button class="btn" data-fermer-annee title="Redemander le mot de passe">🔒 Verrouiller</button></div>';
+  }
+
+  function styleAnnee(annee, c) {
+    var accent = (c.theme && c.theme.accent) || '#1f77a8';
+    return '--accent:' + accent + ';--motif:' + esc(imgCss(annee, 'motif.jpg')) + ';--bandeau:' + esc(imgCss(annee, 'bandeau.jpg'));
+  }
+
+  function epoque(e) {
+    return e.epoque ? '<span class="couv-epoque">' + esc(e.epoque).replace(/(X|V|I)e\b/, '$1<sup>e</sup>') + '</span>' : '';
   }
 
   function grille(racine, annee, c) {
     racine.innerHTML = '<div class="titre-vue"><h1>' + esc(c.titre) + '</h1>' + barreAnnee(annee, c) + '</div>' +
-      '<div class="couvertures">' + c.etudes.map(function (e, i) {
-        return '<a class="couverture" href="#/etudes/' + encodeURIComponent(annee) + '/' + encodeURIComponent(e.id) + '" style="--motif:' + esc(imgCss(annee, 'motif.jpg')) + '">' +
+      '<div class="couvertures" style="' + styleAnnee(annee, c) + '">' + c.etudes.map(function (e, i) {
+        return '<a class="couverture" href="#/etudes/' + encodeURIComponent(annee) + '/' + encodeURIComponent(e.id) + '">' +
           '<span class="couv-photo"><img src="' + img(annee, e.couverture) + '" alt="" loading="lazy"></span>' +
-          '<span class="couv-num">TP ' + (i + 1) + '</span>' +
+          '<span class="couv-num">TP ' + (i + 1) + '</span>' + epoque(e) +
           '<span class="couv-texte"><span class="couv-titre">' + esc(e.titre) + '</span><span class="couv-sous">' + esc(e.sousTitre) + '</span></span></a>';
       }).join('') + '</div>';
+  }
+
+  /* En mode correction, chaque réponse reste cachée jusqu'à ce qu'on clique dessus. */
+  function blocReponse(d, k) {
+    return '<div class="reponse cachee" data-reponse="' + k + '">' +
+      '<button type="button" class="voir-reponse">Voir la réponse</button>' +
+      '<div class="reponse-texte">' + (d.solution ? d.solution : '<em>Réponse à venir.</em>') + '</div></div>';
+  }
+
+  function listeDefis(c, defis) {
+    var k = 0;
+    return '<ol class="defis">' + defis.map(function (d) {
+      if (d.intertitre) return '<li class="intertitre">' + esc(d.intertitre) + '</li>';
+      if (d.note) return '<li class="note-defi">' + d.note + '</li>';
+      var rep = c.solutions ? blocReponse(d, k++) : '';
+      return '<li class="' + (d.bonus ? 'defi bonus-defi' : 'defi') + '"><div>' + (d.bonus ? '<span class="bonus">Bonus</span> ' : '') + d.texte + '</div>' + rep + '</li>';
+    }).join('') + '</ol>';
+  }
+
+  function figures(annee, liste) {
+    return (liste || []).map(function (il) {
+      return '<figure class="' + (il.large ? 'large' : '') + '"><img src="' + img(annee, il.img) + '" alt="">' +
+        (il.legende ? '<figcaption>' + il.legende + '</figcaption>' : '') + '</figure>';
+    }).join('');
   }
 
   function detail(racine, annee, c, idEtude) {
@@ -134,29 +165,38 @@
     if (i < 0) { U.va('etudes', [annee]); return; }
     var e = c.etudes[i], prec = c.etudes[i - 1], suiv = c.etudes[i + 1];
     var lien = function (x) { return '#/etudes/' + encodeURIComponent(annee) + '/' + encodeURIComponent(x.id); };
-    var illus = (e.illustrations || []).map(function (il) {
-      return '<figure class="' + (il.large ? 'large' : '') + '"><img src="' + img(annee, il.img) + '" alt="">' +
-        (il.legende ? '<figcaption>' + il.legende + '</figcaption>' : '') + '</figure>';
-    });
-    var larges = (e.illustrations || []).map(function (il, k) { return il.large ? illus[k] : ''; }).join('');
-    var cote = (e.illustrations || []).map(function (il, k) { return il.large ? '' : illus[k]; }).join('');
+    var illus = e.illustrations || [];
+    var larges = figures(annee, illus.filter(function (il) { return il.large; }));
+    var cote = figures(annee, illus.filter(function (il) { return !il.large; }));
+    var annexe = c.solutions && e.annexeSolution ?
+      '<section class="annexe reponse cachee" data-reponse="annexe"><button type="button" class="voir-reponse">Voir : ' + esc(e.annexeSolution.titre) + '</button>' +
+      '<div class="reponse-texte"><h4>' + esc(e.annexeSolution.titre) + '</h4><div class="galerie' + ((e.annexeSolution.galerie || []).length === 1 ? ' seule' : '') + '">' +
+      figures(annee, e.annexeSolution.galerie) + '</div></div></section>' : '';
     racine.innerHTML =
       '<div class="titre-vue"><h1><a href="#/etudes/' + encodeURIComponent(annee) + '" class="fil">' + esc(c.titre) + '</a> · TP ' + (i + 1) + '</h1>' +
-      barreAnnee(annee, c, (prec ? '<a class="btn" href="' + lien(prec) + '" title="' + esc(prec.titre) + '">← TP ' + i + '</a>' : '') +
+      barreAnnee(annee, c,
+        (c.solutions ? '<button class="btn" data-tout="1">Tout révéler</button><button class="btn" data-tout="0">Tout masquer</button>' : '') +
+        (prec ? '<a class="btn" href="' + lien(prec) + '" title="' + esc(prec.titre) + '">← TP ' + i + '</a>' : '') +
         (suiv ? '<a class="btn" href="' + lien(suiv) + '" title="' + esc(suiv.titre) + '">TP ' + (i + 2) + ' →</a>' : '')) + '</div>' +
-      '<article class="page-etude" style="--bandeau:' + esc(imgCss(annee, 'bandeau.jpg')) + '">' +
+      '<article class="page-etude" style="' + styleAnnee(annee, c) + '">' +
       '<div class="etude-bandeau"></div>' +
-      '<div class="etude-corps"><h2 class="etude-titre">' + esc(e.titre) + ' <span class="etude-sous">— ' + esc(e.sousTitre) + '</span></h2>' +
-      '<div class="etude-colonnes"><div class="etude-texte">' +
+      '<div class="etude-corps"><h2 class="etude-titre"><span class="t">' + esc(e.titre) + '</span> <span class="etude-sous">— ' + esc(e.sousTitre) + '</span>' +
+      (e.epoque ? ' <span class="etude-epoque">' + esc(e.epoque).replace(/(X|V|I)e\b/, '$1<sup>e</sup>') + ' siècle</span>' : '') + '</h2>' +
+      '<div class="etude-colonnes' + (cote ? '' : ' sans-illus') + '"><div class="etude-texte">' +
       (larges ? '<div class="illus-larges">' + larges + '</div>' : '') +
-      '<p class="accroche">→ ' + esc(e.accroche) + '</p>' +
-      '<h3 class="defis-titre">Défis</h3><ol class="defis">' + e.defis.map(function (d) {
-        var rep = c.solutions && !masquerReponses ? '<div class="reponse">' + (d.solution ? '<strong>Réponse : </strong>' + d.solution : '<em>Réponse à venir.</em>') + '</div>' : '';
-        return '<li><div>' + d.texte + '</div>' + rep + '</li>';
-      }).join('') + '</ol>' +
-      (e.remarque ? '<p class="remarque">' + e.remarque + '</p>' : '') + '</div>' +
+      (e.introduction ? '<div class="introduction">' + e.introduction + '</div>' : '') +
+      (e.accroche ? '<p class="accroche">→ ' + esc(e.accroche) + '</p>' : '') +
+      '<h3 class="defis-titre">Défis</h3>' + listeDefis(c, e.defis) +
+      (e.remarque ? '<p class="remarque">' + e.remarque + '</p>' : '') + annexe + '</div>' +
       (cote ? '<aside class="illus-cote">' + cote + '</aside>' : '') + '</div></div></article>';
     liensExternes(racine);
+    U.on(racine, 'click', '.reponse.cachee', function (ev, el) {
+      if (ev.target.closest('a')) return;
+      el.classList.remove('cachee');
+    });
+    U.on(racine, 'click', '[data-tout]', function (ev, el) {
+      U.$$('.reponse', racine).forEach(function (r) { r.classList.toggle('cachee', el.dataset.tout !== '1'); });
+    });
     racine.scrollTop = 0; root.scrollTo(0, 0);
   }
 
@@ -168,7 +208,6 @@
       if (!c) { formulaire(racine, annee); return; }
       if (idEtude) detail(racine, annee, c, idEtude); else grille(racine, annee, c);
       U.on(racine, 'click', '[data-fermer-annee]', function () { ferme(annee); U.va('etudes', [annee]); });
-      U.on(racine, 'click', '[data-bascule]', function () { masquerReponses = !masquerReponses; root.GA_APP.affiche(); });
     }
     if (ouvertes[annee]) suite();
     else {

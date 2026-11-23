@@ -333,11 +333,18 @@ details summary { cursor: pointer; color: var(--discret); }
 .couv-num { position: absolute; z-index: 2; right: 10px; top: 8px; background: rgba(14, 36, 49, .8); color: #fff; font-size: .75rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
 .couv-texte { position: absolute; z-index: 2; left: 4%; right: 3%; bottom: 0; height: 27%; display: flex; align-items: center; gap: 12px; }
 .couv-titre { flex: 1; text-align: right; font-size: 1.2rem; font-weight: 300; text-transform: uppercase; letter-spacing: 1.5px; line-height: 1.1; color: #111; text-shadow: 0 0 6px #fff, 0 0 2px #fff; }
-.couv-sous { flex: 0 0 34%; border-left: 2px solid #1f77a8; padding-left: 10px; font-size: .8rem; color: #333; }
+.couv-epoque { position: absolute; z-index: 2; right: 3%; bottom: 28%; font-weight: 700; font-size: .85rem; letter-spacing: 1px; color: #111; background: #fff; padding: 1px 8px; border-radius: 3px; }
+.couv-sous { flex: 0 0 34%; border-left: 2px solid var(--accent, #1f77a8); padding-left: 10px; font-size: .8rem; color: #333; }
 .page-etude { background: #fff; color: #1b1b1b; border-radius: 6px; overflow: hidden; box-shadow: var(--ombre); max-width: 1200px; margin: 0 auto; }
 .etude-bandeau { height: 30px; background: var(--bandeau) repeat-x; background-size: auto 100%; }
 .etude-corps { padding: 18px 26px 26px; }
-.etude-titre { font-size: 1.15rem; text-decoration: underline; color: #111; margin-bottom: 12px; }
+.etude-titre { font-size: 1.15rem; color: #111; margin-bottom: 12px; }
+.etude-titre .t { text-decoration: underline; }
+@media (min-width: 1300px) {
+  .sans-illus .defis { column-count: 2; column-gap: 40px; }
+  .sans-illus .defis > li { break-inside: avoid; }
+  .sans-illus .defis > li.intertitre { break-after: avoid; }
+}
 .etude-sous { font-weight: 400; text-decoration: none; display: inline-block; color: #555; font-style: italic; }
 .page-etude a { color: #3f8f1f; text-decoration: underline; }
 .etude-colonnes { display: flex; gap: 26px; align-items: flex-start; }
@@ -345,13 +352,32 @@ details summary { cursor: pointer; color: var(--discret); }
 .accroche { font-weight: 700; font-size: 1.12rem; margin: 6px 0 14px; }
 .defis-titre { color: #111; font-size: 1.1rem; font-weight: 500; text-decoration: underline; margin: 10px 0 8px; }
 .defis { list-style: none; counter-reset: defi; margin: 0; padding: 0; }
-.defis > li { counter-increment: defi; position: relative; padding: 0 0 14px 34px; line-height: 1.5; }
-.defis > li::before { content: counter(defi); position: absolute; left: 0; top: 1px; width: 22px; height: 22px; border: 1.5px solid #222; border-radius: 50%; font-size: .8rem; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+.defis > li { position: relative; padding: 0 0 14px 34px; line-height: 1.5; }
+.defis > li.defi:not(.bonus-defi) { counter-increment: defi; }
+.defis > li.defi:not(.bonus-defi)::before { content: counter(defi); position: absolute; left: 0; top: 1px; width: 22px; height: 22px; border: 1.5px solid #222; border-radius: 50%; font-size: .8rem; font-weight: 600; display: flex; align-items: center; justify-content: center; }
 .indice { color: #555; font-size: .92em; white-space: normal; }
 .indice::before { content: '['; } .indice::after { content: ']'; }
 .bonus { font-variant: small-caps; font-weight: 600; }
-.reponse { margin-top: 6px; padding: 8px 12px; background: #eef8e8; border-left: 4px solid #3f8f1f; border-radius: 4px; }
-.reponse em { color: #777; }
+.defis > li.intertitre { padding: 6px 0 8px; font-weight: 700; text-decoration: underline; }
+.defis > li.note-defi { padding-left: 34px; font-style: italic; color: #444; }
+.reponse { margin-top: 6px; padding: 8px 12px; background: color-mix(in srgb, var(--accent, #3f8f1f) 10%, #fff); border-left: 4px solid var(--accent, #3f8f1f); border-radius: 4px; color: color-mix(in srgb, var(--accent, #3f8f1f) 65%, #000); font-weight: 600; }
+.reponse em { color: #777; font-weight: 400; }
+.reponse .voir-reponse { display: none; }
+.reponse.cachee { background: none; border: 1.5px dashed var(--accent, #3f8f1f); padding: 0; cursor: pointer; display: inline-block; }
+.reponse.cachee .reponse-texte { display: none; }
+.reponse.cachee .voir-reponse { display: inline-block; background: none; border: 0; padding: 5px 12px; font: inherit; font-size: .88rem; font-weight: 600; color: var(--accent, #3f8f1f); cursor: pointer; }
+.reponse.cachee:hover { background: color-mix(in srgb, var(--accent, #3f8f1f) 8%, #fff); }
+.introduction p { margin: 0 0 8px; text-align: justify; }
+.etude-epoque { font-size: .8rem; font-weight: 600; text-decoration: none; display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 10px; background: var(--accent, #1f77a8); color: #fff; vertical-align: middle; }
+.annexe { margin-top: 10px; }
+.annexe h4 { margin: 0 0 8px; color: #111; }
+.annexe.reponse:not(.cachee) { display: block; font-weight: 400; color: #222; }
+.galerie { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.galerie.seule { grid-template-columns: 1fr; }
+.galerie figure { margin: 0; text-align: center; }
+.galerie img { width: 100%; max-height: 150px; object-fit: contain; }
+.galerie.seule img { max-height: 60vh; width: auto; max-width: 100%; }
+.galerie figcaption { font-size: .78rem; }
 .remarque { margin-top: 8px; color: #444; font-style: italic; }
 .illus-larges { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
 .illus-larges figure { margin: 0; }

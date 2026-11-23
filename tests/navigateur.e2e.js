@@ -322,7 +322,18 @@ fs.mkdirSync(OUT, { recursive: true });
   await page.waitForSelector('.badge-solutions');
   await page.goto(APP + '#/etudes/2023/tp3');
   await page.waitForSelector('.reponse');
-  ok((await page.$$eval('.reponse', (l) => l.length)) === 5, '« 2023Solution » : réponses affichées');
+  ok((await page.$$eval('.reponse.cachee', (l) => l.length)) === 5, '« 2023Solution » : 5 réponses, cachées au départ');
+  await page.click('.reponse.cachee >> nth=0');
+  ok((await page.$$eval('.reponse.cachee', (l) => l.length)) === 4, 'un clic révèle une seule réponse');
+  await page.goto(APP + '#/etudes/2024');
+  await page.waitForSelector('[name=mdp]');
+  await page.fill('[name=mdp]', '2024Solution'); await page.click('.mdp-etudes button');
+  await page.waitForSelector('.couverture');
+  await page.goto(APP + '#/etudes/2024/tp2');
+  await page.waitForSelector('.annexe');
+  await page.click('[data-tout="1"]');
+  const rev = await page.evaluate(() => ({ cachees: document.querySelectorAll('.reponse.cachee').length, texte: document.querySelector('.page-etude').textContent }));
+  ok(rev.cachees === 0 && rev.texte.includes('1 E 206') && rev.texte.includes('Nicolas SIMON'), '2024 : question et annexe propres à la correction, « Tout révéler »');
   await shot('23-etude-correction');
 
   // Mobile

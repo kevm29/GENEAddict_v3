@@ -70,17 +70,25 @@ async function chiffrer(fichier) {
   if (!annee || !motsDePasse || !motsDePasse.enonces || !motsDePasse.solutions) throw new Error('annee et motsDePasse.enonces / .solutions sont obligatoires');
   const contenu = Object.assign({}, src);
   delete contenu.motsDePasse;
+  // énoncés : ni réponses, ni questions ou annexes réservées à la correction
   const enonces = JSON.parse(JSON.stringify(contenu));
-  enonces.etudes.forEach((e) => e.defis.forEach((d) => { delete d.solution; }));
+  enonces.etudes.forEach((e) => {
+    e.defis.forEach((d) => { delete d.solution; });
+    delete e.defisSolution; delete e.annexeSolution;
+  });
   enonces.solutions = false;
-  const complet = Object.assign(JSON.parse(JSON.stringify(contenu)), { solutions: true, motsDePasse });
+  // correction : la liste « defisSolution » remplace celle des énoncés quand elle existe ;
+  // la source complète est jointe pour pouvoir la ré-extraire à l'identique
+  const complet = JSON.parse(JSON.stringify(contenu));
+  complet.etudes.forEach((e) => { if (e.defisSolution) { e.defis = e.defisSolution; delete e.defisSolution; } });
+  Object.assign(complet, { solutions: true, source: src });
   const annees = litSortie();
   annees[annee] = {
     annee, titre: titre || 'Études de cas ' + annee, nombre: contenu.etudes.length,
     niveaux: [await chiffre(enonces, motsDePasse.enonces), await chiffre(complet, motsDePasse.solutions)]
   };
   ecritSortie(annees);
-  const nbSol = contenu.etudes.reduce((n, e) => n + e.defis.filter((d) => d.solution).length, 0);
+  const nbSol = complet.etudes.reduce((n, e) => n + e.defis.filter((d) => d.solution).length, 0);
   console.log(`${annee} : ${contenu.etudes.length} études chiffrées, ${nbSol} réponse(s) → ${path.relative(RACINE, SORTIE)}`);
 }
 
@@ -88,10 +96,9 @@ async function extraire(annee, motDePasse) {
   const a = litSortie()[annee];
   if (!a) throw new Error('Année ' + annee + ' absente de ' + SORTIE);
   const c = await dechiffre(a.niveaux[1], motDePasse).catch(() => { throw new Error('Mot de passe des solutions incorrect.'); });
-  delete c.solutions;
   const dest = path.join(RACINE, 'etudes', 'sources', annee + '.json');
   fs.mkdirSync(path.dirname(dest), { recursive: true });
-  const ordre = { annee: c.annee, titre: c.titre, motsDePasse: c.motsDePasse, etudes: c.etudes };
+  const ordre = c.source || { annee: c.annee, titre: c.titre, motsDePasse: c.motsDePasse, etudes: c.etudes };
   fs.writeFileSync(dest, JSON.stringify(ordre, null, 2) + '\n');
   console.log('Source recréée : ' + path.relative(RACINE, dest));
 }

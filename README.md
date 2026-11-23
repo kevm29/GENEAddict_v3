@@ -49,7 +49,7 @@ Astuce : ajoutez `index.html` à vos favoris ou créez un raccourci sur le burea
 | **Saisie rapide** | Ajout d'actes **sans formulaire** : texte à balises ou tableau copié depuis Excel, avec suggestions à la frappe après `@`, aperçu, contrôle des erreurs et détection des doublons. Les balises que vous inventez (`@parrain`, `@source`…) sont gardées comme champs personnalisés. Voir [`docs/FORMAT_SAISIE.md`](docs/FORMAT_SAISIE.md). |
 | **Fiche de consultation** | Feuille A4 portrait à emporter aux archives : nom simple du centre, une ligne par document, la cote puis les informations séparées par des tirets (date — acte — personnes — notaire…), case à cocher, rappel des dépouillements en cours ; la dernière page est complétée de lignes de notes jusqu'en bas (aucune s'il ne reste pas de place) ; annotations et lignes vides en option. |
 | **Dépouillements** | Suivi page à page de la lecture d'un registre, d'une étude notariale ou d'un fonds. |
-| **Études de cas** | Les TP par année (2023 : 8 études), protégés par mot de passe : couvertures puis pages de défis avec leurs liens cliquables. Le mot de passe des énoncés montre les questions, celui des solutions montre aussi les réponses (avec un bouton pour les masquer). |
+| **Études de cas** | Les TP par année (2023 : 8 études ; 2024 et 2025 : 4 études chacune), protégés par mot de passe : couvertures puis pages de défis avec leurs liens cliquables, aux couleurs de chaque année. Le mot de passe des énoncés montre les questions ; celui des solutions donne aussi les réponses, cachées au départ et révélées une à une d'un clic (ou toutes avec « Tout révéler »), ainsi que les questions et documents propres à la correction. |
 | **Liens** | Sites utiles, rangés par catégorie. |
 | **Ma base** | Dossier d'enregistrement, export JSON / CSV, restauration, reprise de l'ancienne base MySQL. |
 
@@ -123,6 +123,12 @@ node outils/etudes.js extraire 2023 <mot de passe des solutions>   # recrée etu
 # … modifier etudes/sources/2023.json : champ "solution" de chaque défi, en HTML …
 node outils/etudes.js chiffrer etudes/sources/2023.json              # met à jour etudes/etudes.js
 ```
+
+Dans le fichier source, chaque élément de `defis` est un défi (`texte`, `solution`, `bonus: true`
+pour une question bonus non numérotée), un `intertitre` ou une `note` intercalée. `defisSolution`
+remplace la liste en mode correction quand les questions y diffèrent, et `annexeSolution`
+(titre + galerie d'images légendées) n'apparaît qu'en correction. `theme.accent` donne la couleur
+de l'année ; les images `motif.jpg` et `bandeau.jpg` du dossier de l'année font le décor.
 
 `etudes/sources/` contient le texte en clair (réponses comprises) : il est exclu de git.
 Pour une nouvelle année, copier un fichier source, changer `annee` et `motsDePasse`,
