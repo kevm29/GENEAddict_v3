@@ -117,6 +117,11 @@ Un paragraphe qui commence par `@par-defaut` (ou `@pour-tous`) donne des valeurs
 @cote ET/CIII/12
 ```
 
+Au-dessus de la zone de saisie, **« Statut si non précisé »** et **« Tags si non précisés »** jouent
+le même rôle pour toute la saisie, acte par acte : un acte qui a son propre `@statut` ou ses propres
+`@tags` (ou les reçoit d'un bloc `@par-defaut`, ou d'une colonne du tableau) les garde, tous les
+autres prennent ceux du haut.
+
 ### Noms et prénoms
 
 Le **nom de famille s'écrit en MAJUSCULES** ; les particules qui le précèdent (de, du, d', le, la…)

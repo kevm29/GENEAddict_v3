@@ -295,6 +295,7 @@
     if (tmp.nom || tmp.prenom) acte.personnes.unshift({ prenom: tmp.prenom || '', nom: tmp.nom || '' });
     if (tmp.nom2 || tmp.prenom2) acte.personnes.push({ prenom: tmp.prenom2 || '', nom: tmp.nom2 || '' });
     acte.description = acte.description.replace(/^\[(.*)\]$/s, '$1');
+    acte._statutDonne = !!acte.statut; // écrit dans l'acte ou dans le bloc @par-defaut
     if (!acte.statut) acte.statut = 'chercher';
     if (!acte.annee && !acte.dateTexte && !acte.cote && !acte.personnes.length && !acte.type) {
       acte._erreurs.push('Acte vide : il faut au moins une date, une cote, un type ou une personne.');

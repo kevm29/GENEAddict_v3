@@ -51,7 +51,7 @@
     '<p><strong>Ancienne base :</strong> l\'export CSV de la table <code>docs</code> depuis phpMyAdmin (colonnes jour, mois, annee, p1, n1, p2, n2, dep, statut…) est reconnu tel quel.</p>' +
     '<p>Guide complet : <code>docs/FORMAT_SAISIE.md</code>.</p></div></div></details>';
 
-  var brouillon = { texte: '', format: 'auto', centre: '', statut: '', fichier: '' };
+  var brouillon = { texte: '', format: 'auto', centre: '', statut: '', tags: '', fichier: '' };
 
   function rendu(racine, route) {
     if (route.params.centre) brouillon.centre = route.params.centre;
@@ -68,7 +68,8 @@
       '<div class="options-saisie">' +
       '<label>Format <select name="format"><option value="auto">Détection automatique</option><option value="balises">Texte à balises</option><option value="tableau">Tableau / CSV</option></select></label>' +
       '<label>Centre si non précisé <select name="centre">' + U.optionsCentres(brouillon.centre, '— aucun —') + '</select></label>' +
-      '<label>Statut si non précisé ' + U.selectStatut(brouillon.statut || 'chercher', 'name="statut"') + '</label></div>' +
+      '<label>Statut si non précisé ' + U.selectStatut(brouillon.statut || 'chercher', 'name="statut"') + '</label>' +
+      '<label>Tags si non précisés <input type="text" name="tags" placeholder="ex. PG, mariage" value="' + esc(brouillon.tags) + '"></label></div>' +
       '<div class="zone-texte-cadre"><textarea class="zone-texte" spellcheck="false" placeholder="Collez ou tapez ici vos actes…\n\n@date 02/06/1642\n@type Procuration\n@personne Gentien de MARIGNER\n@cote ET/LXXXV/366\n\n— ou collez directement des lignes copiées depuis Excel."></textarea><ul class="suggestions" hidden role="listbox"></ul></div>' +
       '<p class="discret">Astuce : glissez-déposez un fichier .txt ou .csv dans la zone. <kbd>Ctrl</kbd>+<kbd>Entrée</kbd> pour ajouter.</p></div>' +
       '<div class="carte apercu"><div class="apercu-tete"><h2>Aperçu</h2><span class="resume"></span></div>' +
@@ -81,6 +82,7 @@
     var selFormat = U.$('[name=format]', racine);
     var selCentre = U.$('[name=centre]', racine);
     var selStatut = U.$('[name=statut]', racine);
+    var champTags = U.$('[name=tags]', racine);
     var liste = U.$('.apercu-liste', racine);
     var resume = U.$('.resume', racine);
     var btnAjouter = U.$('[data-ajouter]', racine);
@@ -93,9 +95,9 @@
 
     function prepare() {
       brouillon.texte = zone.value; brouillon.format = selFormat.value;
-      brouillon.centre = selCentre.value; brouillon.statut = selStatut.value;
+      brouillon.centre = selCentre.value; brouillon.statut = selStatut.value; brouillon.tags = champTags.value;
       resultat = S.lire(zone.value, selFormat.value);
-      var explicite = /^\s*@?statut\b/im.test(zone.value) || resultat.format === 'tableau' && resultat.colonnes && resultat.colonnes.indexOf('statut') >= 0;
+      var tagsDefaut = brouillon.tags.split(/\s*[,;#]\s*/).filter(Boolean);
       actes = resultat.actes.map(function (a) {
         var x = { acte: a, inclus: !a._erreurs.length, centre: null, centreInconnu: '' };
         if (a.centre) {
@@ -104,8 +106,10 @@
         } else if (brouillon.centre) {
           x.centre = D.centreParId(brouillon.centre);
         }
-        // le statut par défaut choisi ici remplace « à chercher » quand la saisie n'en donne pas
-        if (brouillon.statut && brouillon.statut !== 'chercher' && a.statut === 'chercher' && !explicite) a.statut = brouillon.statut;
+        // statut et tags choisis en haut : seulement pour les actes qui n'en donnent pas eux-mêmes
+        // (ni dans l'acte, ni dans un bloc @par-defaut, ni dans une colonne du tableau)
+        if (!a._statutDonne && brouillon.statut) a.statut = brouillon.statut;
+        if (!a.tags.length && tagsDefaut.length) a.tags = tagsDefaut.slice();
         x.doublon = D.estDoublon(a);
         if (x.doublon) x.inclus = false;
         return x;
@@ -153,6 +157,7 @@
             '<div class="apercu-ligne2">' + (a.notaire ? 'Me ' + esc(a.notaire) + ' · ' : '') + (a.ville ? esc(a.ville) + ' · ' : '') +
             '<span class="mono">' + esc(a.cote || 'sans cote') + '</span> · ' + esc(centre) + ' · ' + U.pastilleStatut(a.statut) +
             (a.notes ? ' · <span title="' + esc(a.notes) + '">✎ notes</span>' : '') +
+            a.tags.map(function (t) { return ' <span class="tag-apercu">#' + esc(t) + '</span>'; }).join('') +
             Object.keys(a.champs).map(function (k) { return ' · <span class="perso">@' + esc(k) + '</span> ' + esc(a.champs[k].split('\n')[0]); }).join('') + '</div>' +
             (msgs.length ? '<ul class="messages">' + msgs.join('') + '</ul>' : '') + '</div></div>';
         }).join('');
@@ -218,6 +223,7 @@
     var prepareVite = U.debounce(prepare, 250);
     zone.addEventListener('input', function () { if (!zone.value) brouillon.fichier = ''; prepareVite(); });
     [selFormat, selCentre, selStatut].forEach(function (s) { s.addEventListener('change', prepare); });
+    champTags.addEventListener('input', prepareVite);
     creerCentres.addEventListener('change', dessine);
     zone.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); prepare(); ajoute(); }

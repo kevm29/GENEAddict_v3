@@ -269,6 +269,7 @@ fs.mkdirSync(OUT, { recursive: true });
   await page.waitForTimeout(400);
   ok((await page.textContent('.apercu-liste')).includes('Nouvelle balise @parrain'), 'aperçu : nouvelle balise signalée');
   await shot('20-saisie-balise-perso');
+
   await page.click('[data-ajouter]');
   await page.waitForTimeout(300);
   await page.goto(APP + '#/documents?q=kerbrat%20yves');
@@ -278,6 +279,19 @@ fs.mkdirSync(OUT, { recursive: true });
   ok((await page.inputValue('.modale [data-champ="parrain"]')) === 'Yves KERBRAT', 'champ personnalisé dans la fiche du document');
   await shot('21-fiche-champ-perso');
   await page.keyboard.press('Escape');
+
+  // Statut et tags « si non précisé » : appliqués acte par acte
+  await page.goto(APP + '#/saisie'); await page.waitForSelector('.zone-texte');
+  await page.click('[data-vider]');
+  await page.selectOption('[name=statut]', 'demande');
+  await page.fill('[name=tags]', 'PG, test-defaut');
+  await page.fill('.zone-texte', '@cote DEF/1\n@type Naissance\n\n@cote DEF/2\n@type Décès\n@statut obtenu\n\n@cote DEF/3\n@type Mariage\n@tags autre');
+  await page.waitForFunction(() => document.querySelectorAll('.apercu-acte').length === 3);
+  const def = await page.$$eval('.apercu-acte', (l) => l.map((x) => x.querySelector('.apercu-ligne2').textContent));
+  ok(/demand/i.test(def[0]) && /#PG #test-defaut/.test(def[0]) && /obtenu/i.test(def[1]) && /#PG/.test(def[1]) && /demand/i.test(def[2]) && /#autre/.test(def[2]) && !/#PG/.test(def[2]),
+    'saisie : statut et tags du haut pour les actes qui n\'en donnent pas, un @statut isolé ne change pas les autres');
+  await page.click('[data-vider]');
+  await page.selectOption('[name=statut]', 'chercher'); await page.fill('[name=tags]', '');
   await page.goto(APP + '#/donnees');
   await page.waitForSelector('.table-balises');
   ok((await page.textContent('.table-balises')).includes('@parrain'), 'Ma base : @parrain listée');
