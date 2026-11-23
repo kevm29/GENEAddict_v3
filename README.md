@@ -14,7 +14,9 @@ toute seule à chaque modification.
 
 1. Téléchargez le projet (bouton vert **Code → Download ZIP** sur GitHub) et décompressez-le
    où vous voulez.
-2. Ouvrez `index.html` avec **Chrome** ou **Edge** (double-clic, ou glisser le fichier dans le navigateur).
+2. Sous Windows, double-cliquez sur **`GENEAddict.bat`** : il ouvre l'application dans Chrome
+   (ou Edge à défaut), dans sa propre fenêtre, **même si Firefox est votre navigateur par défaut**.
+   Sinon, ouvrez `index.html` avec Chrome ou Edge (clic droit → *Ouvrir avec*).
 3. Sur l'accueil, cliquez sur **« Choisir le dossier de ma base »** et choisissez un dossier
    (par exemple `Documents/Généalogie`, ou un dossier OneDrive / Dropbox pour retrouver la base
    sur plusieurs ordinateurs).
@@ -35,7 +37,8 @@ Généalogie/
 > Avec Firefox ou Safari (qui ne savent pas écrire dans un dossier), la base est gardée dans le
 > navigateur ; pensez alors à l'**exporter** régulièrement depuis *Ma base*.
 
-Astuce : ajoutez `index.html` à vos favoris ou créez un raccourci sur le bureau.
+Astuce : clic droit sur `GENEAddict.bat` → *Envoyer vers → Bureau (créer un raccourci)*.
+Une fois la fenêtre ouverte, vous pouvez aussi l'épingler à la barre des tâches.
 
 ---
 
