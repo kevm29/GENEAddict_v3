@@ -1,0 +1,36 @@
+# Exemple de fichier à balises pour GENEAddict.
+# Déposez ce fichier dans le dossier a-importer/ de votre base,
+# ou ouvrez-le depuis l'écran « Saisie rapide ».
+
+@par-defaut
+@centre CARAN
+@statut à chercher
+
+@date 02/06/1642
+@type Procuration et acte de décès
+@personne Gentien de MARIGNER
+@notaire REGNAULT
+@cote ET/LXXXV/366
+@note Voir aussi la liasse suivante,
+peut-être un inventaire après décès.
+
+@date 05/10/1654
+@type Inventaire après décès
+@personne Hélène FLEURY
+@notaire PLISSON
+@cote ET/XXXIII/54
+
+@date 12/12/1682
+@type Marché
+@personne Hélène Angélique de MARIGNER & Jean CROSNIER
+@notaire DECOURT
+@cote ET/XXX/252
+@statut obtenu
+
+---
+Centre : Ille-et-Vilaine
+Date : vers 1712
+Type : Contrat de mariage
+Personne : Jean MURET & Anne LE GALL
+Cote : 4 E 1234
+Tags : Muret, Rennes

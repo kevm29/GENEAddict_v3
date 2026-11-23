@@ -1,0 +1,53 @@
+/* GENEAddict — fiches imprimables : aperçu « papier » à l'écran et mise en page A4. */
+
+.papier { width: 100%; max-width: 297mm; background: #fff; color: #111; padding: 14mm 12mm; border-radius: 4px; box-shadow: 0 10px 40px rgba(0, 0, 0, .4); font: 10.5pt/1.35 "Segoe UI", Calibri, Arial, sans-serif; }
+.papier h1 { font-size: 16pt; margin: 2px 0 4px; color: #0e2431; }
+.papier h2 { font-size: 11.5pt; margin: 14px 0 6px; color: #0e2431; border-bottom: 1px solid #0f4a5c; padding-bottom: 2px; }
+.papier .nom { font-weight: 700; }
+.papier .et, .papier .sous { color: #555; }
+.papier .sous { font-size: 9pt; white-space: pre-line; }
+.papier .mono { font-family: Consolas, "Courier New", monospace; font-size: 9.5pt; }
+.papier-tete { display: flex; gap: 16px; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f4a5c; padding-bottom: 8px; margin-bottom: 10px; }
+.papier-marque { font-size: 8.5pt; text-transform: uppercase; letter-spacing: 1px; color: #0f6f8a; }
+.papier-infos { margin: 0; color: #333; }
+.papier-champs { border-collapse: collapse; font-size: 9.5pt; flex: none; }
+.papier-champs th { text-align: right; font-weight: 400; color: #555; padding: 2px 8px; }
+.papier-champs td { border-bottom: 1px solid #999; min-width: 42mm; padding: 2px 6px; font-weight: 600; }
+.papier-liste { width: 100%; border-collapse: collapse; }
+.papier-liste th { text-align: left; font-size: 8.5pt; text-transform: uppercase; letter-spacing: .3px; color: #333; background: #e7f0f3; padding: 4px 5px; border: 1px solid #b9c9cf; }
+.papier-liste td { border: 1px solid #b9c9cf; padding: 4px 5px; vertical-align: top; }
+.papier-liste tr { break-inside: avoid; }
+.papier-liste tr.vide td { height: 9mm; }
+.papier-liste .c-case { width: 7mm; text-align: center; }
+.papier-liste .c-cote { width: 30mm; }
+.papier-liste .c-date { width: 21mm; white-space: nowrap; }
+.papier-liste .c-notes { width: 55mm; }
+.papier-liste .c-statut { width: 30mm; }
+.case-vide { display: inline-block; width: 3.6mm; height: 3.6mm; border: 1.2px solid #333; border-radius: 1px; }
+.papier .select-statut { background: #fff; color: #111; border: 1px solid #999; font-size: 9pt; color-scheme: light; }
+.papier .select-statut.statut-obtenu { color: #2b7a00; }
+.papier .select-statut.statut-demande { color: #006c99; }
+.papier .select-statut.statut-chercher { color: #9a6200; }
+.papier .select-statut.statut-perdu { color: #b3261e; }
+.papier-lignes { height: 45mm; background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 8.5mm, #bbb 8.5mm, #bbb 9mm); }
+.papier-detail { border-collapse: collapse; width: 100%; }
+.papier-detail th { text-align: left; width: 35mm; color: #555; font-weight: 400; padding: 3px 6px 3px 0; vertical-align: top; }
+.papier-detail td { padding: 3px 0; border-bottom: 1px dotted #bbb; }
+.papier-texte { white-space: pre-wrap; border-left: 3px solid #0f4a5c; padding: 4px 10px; background: #f4f8f9; }
+.papier-pied { margin-top: 12px; font-size: 8pt; color: #777; text-align: right; }
+
+@page { size: A4 landscape; margin: 10mm; }
+
+@media print {
+  :root { color-scheme: light; }
+  html, body { background: #fff !important; color: #111; }
+  .entete, .menu, #toasts, .modale-fond, .ecran-seul { display: none !important; }
+  .cadre, .vue { display: block; padding: 0; margin: 0; min-height: 0; }
+  .papier { box-shadow: none; padding: 0; max-width: none; border-radius: 0; page-break-after: always; }
+  .papier:last-child { page-break-after: auto; }
+  .pages { display: block; }
+  /* impression lancée par un bouton : on n'imprime que la zone dédiée */
+  body.imprime > *:not(#impression) { display: none !important; }
+  body.imprime #impression { display: block !important; }
+  thead { display: table-header-group; }
+}

@@ -1,0 +1,7 @@
+node_modules/
+captures/
+package-lock.json
+# données personnelles éventuellement posées à côté du code
+geneaddict.json
+sauvegardes/
+a-importer/

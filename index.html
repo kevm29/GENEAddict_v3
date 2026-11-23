@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GENEAddict</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/impression.css">
+</head>
+<body>
+  <header class="entete">
+    <a class="logo" href="#/accueil"><span class="logo-a">GENEA</span><span class="logo-b">ddict</span></a>
+    <input id="recherche-globale" type="search" placeholder="Rechercher un nom, une cote, un notaire…  ( / )" autocomplete="off">
+    <button id="enregistrement" class="enregistrement" type="button"></button>
+  </header>
+  <div class="cadre">
+    <nav id="menu" class="menu"></nav>
+    <main id="vue" class="vue"><p class="chargement">Chargement de la base…</p></main>
+  </div>
+  <div id="impression"></div>
+  <div id="toasts"></div>
+
+  <script src="js/carte-france.js"></script>
+  <script src="js/donnees-initiales.js"></script>
+  <script src="js/saisie.js"></script>
+  <script src="js/donnees.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/vue-accueil.js"></script>
+  <script src="js/vue-archives.js"></script>
+  <script src="js/vue-documents.js"></script>
+  <script src="js/vue-saisie.js"></script>
+  <script src="js/vue-depouillements.js"></script>
+  <script src="js/vue-liens.js"></script>
+  <script src="js/vue-donnees.js"></script>
+  <script src="js/vue-fiche.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "geneaddict",
+  "version": "3.0.0",
+  "description": "Suivi des recherches généalogiques en archives — application locale sans serveur",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "test:navigateur": "node tests/navigateur.e2e.js . captures"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.48.0"
+  }
+}
