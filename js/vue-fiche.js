@@ -24,42 +24,45 @@
     nom: function (a, b) { var x = a.personnes[0], y = b.personnes[0]; return compare(x ? x.nom : '~', y ? y.nom : '~'); }
   };
 
+  /* Une ligne par document : la cote, puis les informations séparées par des tirets. */
+  function ligneDocument(d, o) {
+    var infos = [
+      esc(S.formatDate(d)),
+      esc(d.type),
+      U.personnesHTML(d.personnes),
+      d.notaire ? 'Me\u00a0' + esc(d.notaire) : '',
+      esc(d.ville),
+      esc(d.description)
+    ].filter(Boolean);
+    return '<li><span class="case-vide"></span><div class="ligne-doc">' +
+      '<span class="cote">' + (d.cote ? esc(d.cote) : '<em>sans cote</em>') + '</span>' +
+      (infos.length ? ' — ' + infos.join(' — ') : '') +
+      (o.notes && d.notes ? '<div class="rappel">' + esc(d.notes) + '</div>' : '') + '</div></li>';
+  }
+
   function pageCentre(c, docs, o) {
     var deps = c ? D.etat.data.depouillements.filter(function (x) { return x.centreId === c.id && x.statut !== 'termine'; }) : [];
     var lignesVides = o.vides ? Math.max(0, +o.vides) : 0;
-    var h = '<section class="papier">' +
+    var infosCentre = c ? [c.adresse, c.horaires].filter(Boolean).join(' · ') : '';
+    return '<section class="papier">' +
       '<header class="papier-tete"><div><div class="papier-marque">GENEAddict · fiche de consultation</div>' +
       '<h1>' + esc(c ? c.nom : 'Sans centre') + '</h1>' +
-      (c && (c.adresse || c.horaires) ? '<p class="papier-infos">' + esc([c.adresse, c.horaires].filter(Boolean).join(' · ')) + '</p>' : '') + '</div>' +
-      '<table class="papier-champs"><tr><th>Date de visite</th><td>' + (o.dateVisite ? esc(o.dateVisite) : '') + '</td></tr>' +
-      '<tr><th>N° de lecteur</th><td>' + esc(c && c.lecteur || '') + '</td></tr>' +
-      '<tr><th>Documents</th><td>' + docs.length + '</td></tr></table></header>' +
-      '<table class="papier-liste"><thead><tr><th class="c-case">✓</th><th class="c-cote">Cote</th><th class="c-date">Date</th><th>Acte</th><th>Personnes</th><th>Notaire / lieu</th><th class="c-notes">Notes sur place</th><th class="c-statut ecran-seul">Statut</th></tr></thead><tbody>' +
-      docs.map(function (d) {
-        return '<tr data-id="' + esc(d.id) + '"><td class="c-case"><span class="case-vide"></span></td>' +
-          '<td class="c-cote mono">' + esc(d.cote) + '</td>' +
-          '<td class="c-date">' + esc(S.formatDate(d)) + '</td>' +
-          '<td>' + esc(d.type) + (d.description ? '<div class="sous">' + esc(d.description) + '</div>' : '') + '</td>' +
-          '<td>' + U.personnesHTML(d.personnes) + '</td>' +
-          '<td>' + esc(d.notaire ? 'Me ' + d.notaire : '') + (d.ville ? '<div class="sous">' + esc(d.ville) + '</div>' : '') + '</td>' +
-          '<td class="c-notes">' + (o.notes && d.notes ? '<div class="sous">' + esc(d.notes) + '</div>' : '') + '</td>' +
-          '<td class="c-statut ecran-seul">' + U.selectStatut(d.statut, 'data-statut') + '</td></tr>';
-      }).join('') +
-      new Array(lignesVides + 1).join('<tr class="vide"><td class="c-case"><span class="case-vide"></span></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="ecran-seul"></td></tr>') +
-      '</tbody></table>' +
-      (deps.length ? '<h2>Dépouillements en cours</h2><table class="papier-liste deps"><thead><tr><th>Fonds / registre</th><th>Cote</th><th>Période</th><th>Avancement</th><th>Reprendre à</th><th class="c-notes">Fait aujourd\'hui</th></tr></thead><tbody>' +
-        deps.map(function (x) {
-          return '<tr><td>' + esc(x.titre) + '</td><td class="mono">' + esc(x.cote) + '</td><td>' + esc(x.periode) + '</td>' +
-            '<td>' + (x.pagesTotal ? x.pagesFaites + ' / ' + x.pagesTotal + ' p.' : '') + '</td><td>' + (x.pagesTotal ? 'p. ' + (x.pagesFaites + 1) : '') + '</td><td class="c-notes"></td></tr>';
-        }).join('') + '</tbody></table>' : '') +
-      (o.cadre ? '<h2>Notes libres</h2><div class="papier-lignes"></div>' : '') +
-      '<footer class="papier-pied">Imprimé le ' + esc(new Date().toLocaleDateString('fr-FR')) + ' · ' + docs.length + ' document' + (docs.length > 1 ? 's' : '') + '</footer>' +
+      (infosCentre ? '<p class="papier-infos">' + esc(infosCentre) + '</p>' : '') + '</div>' +
+      '<table class="papier-champs"><tr><th>Date de visite</th><td>' + esc(o.dateVisite || '') + '</td></tr>' +
+      '<tr><th>N° de lecteur</th><td>' + esc(c && c.lecteur || '') + '</td></tr></table></header>' +
+      '<ol class="papier-docs">' + docs.map(function (d) { return ligneDocument(d, o); }).join('') +
+      new Array(lignesVides + 1).join('<li class="vide"><span class="case-vide"></span><div class="ligne-doc"></div></li>') + '</ol>' +
+      (deps.length ? '<h2>Dépouillements en cours</h2><ul class="papier-deps">' + deps.map(function (x) {
+        return '<li>' + [esc(x.titre), x.cote ? '<span class="cote">' + esc(x.cote) + '</span>' : '', esc(x.periode),
+          x.pagesTotal ? x.pagesFaites + ' / ' + x.pagesTotal + ' p., reprendre p. ' + (x.pagesFaites + 1) : ''].filter(Boolean).join(' — ') + '</li>';
+      }).join('') + '</ul>' : '') +
+      (o.cadre ? '<h2>Notes</h2><div class="papier-lignes"></div>' : '') +
+      '<footer class="papier-pied">' + docs.length + ' document' + (docs.length > 1 ? 's' : '') + ' · imprimé le ' + esc(new Date().toLocaleDateString('fr-FR')) + '</footer>' +
       '</section>';
-    return h;
   }
 
   function rendu(racine, route) {
-    var p = Object.assign({ statut: 'chercher,demande', tri: 'cote', notes: '1', vides: '3', cadre: '1', date: '' }, route.params);
+    var p = Object.assign({ statut: 'chercher,demande', tri: 'cote', notes: '0', vides: '0', cadre: '1', date: '' }, route.params);
     var parIds = !!p.ids;
 
     function documents() {
@@ -94,9 +97,8 @@
       '<label>Date de visite <input name="date" type="date" value="' + esc(p.date) + '"></label>' +
       '<label class="case"><input type="checkbox" name="notes"' + (p.notes === '1' ? ' checked' : '') + '> Rappeler mes annotations</label>' +
       '<label>Lignes vides <input name="vides" type="number" min="0" max="30" value="' + esc(p.vides) + '"></label>' +
-      '<label class="case"><input type="checkbox" name="cadre"' + (p.cadre === '1' ? ' checked' : '') + '> Cadre de notes libres</label>' +
+      '<label class="case"><input type="checkbox" name="cadre"' + (p.cadre === '1' ? ' checked' : '') + '> Cadre de notes</label>' +
       '</form>' +
-      '<p class="discret ecran-seul">De retour de consultation, changez le statut directement dans la colonne « Statut » (elle n\'apparaît pas à l\'impression).</p>' +
       '<div class="pages"></div>';
 
     var pages = U.$('.pages', racine);
@@ -119,11 +121,6 @@
       p.vides = f.elements.vides.value;
       U.remplaceParams(p);
       dessine();
-    });
-    U.on(pages, 'change', '[data-statut]', function (e, el) {
-      D.majDocument(el.closest('tr').dataset.id, { statut: el.value });
-      el.className = 'select-statut statut-' + el.value;
-      U.toast('Statut : ' + S.STATUTS[el.value].libelle, 'ok');
     });
     U.$('[data-imprimer]', racine).addEventListener('click', function () { imprime(pages.innerHTML); });
     dessine();

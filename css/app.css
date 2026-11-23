@@ -222,10 +222,13 @@ details summary { cursor: pointer; color: var(--discret); }
 
 /* ------------------------------------------------ archives */
 .archives-grille { display: grid; grid-template-columns: minmax(340px, 1.35fr) minmax(320px, 1fr); gap: 16px; align-items: start; }
-.carte-zone { position: sticky; top: 76px; }
-.carte-boite { position: relative; }
-.carte-france { width: 100%; height: auto; display: block; cursor: grab; touch-action: none; user-select: none; }
+.carte-zone { display: flex; flex-direction: column; margin: 0; }
+.zone-carte { flex: 1; min-height: 0; }
+.carte-boite { position: relative; height: 100%; }
+.carte-france { width: 100%; height: 100%; display: block; touch-action: none; user-select: none; }
+.carte-france.zoomee { cursor: grab; }
 .carte-france.glisse { cursor: grabbing; }
+.encart { fill: rgba(14, 36, 49, .35); stroke: var(--bord); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .dep { fill: #1b6378; stroke: var(--fond); stroke-width: .7; vector-effect: non-scaling-stroke; cursor: pointer; transition: fill .15s; }
 .dep.niv1 { fill: #2b7f8e; }
 .dep.niv2 { fill: #3a9a9d; }
@@ -236,16 +239,23 @@ details summary { cursor: pointer; color: var(--discret); }
 .lisere { fill: none; pointer-events: none; vector-effect: non-scaling-stroke; }
 .lisere.a-chercher { stroke: var(--ambre); stroke-width: 3; }
 .lisere.choisi { stroke: var(--texte); stroke-width: 5; }
-.carte-france .lisere.choisi ~ .lisere, .dep[data-centre=""] { cursor: default; }
+.dep[data-centre=""] { cursor: default; }
 .etiq { pointer-events: none; }
 .etiq text { text-anchor: middle; fill: #fffefb; paint-order: stroke; stroke: rgba(8, 35, 46, .85); stroke-width: .35px; stroke-linejoin: round; font-family: var(--police); }
 .etiq-num { font-weight: 700; }
 .etiq-nom { font-weight: 500; opacity: .92; }
-.encart-idf { position: absolute; left: 6px; top: 6px; width: 23%; min-width: 120px; background: rgba(14, 36, 49, .85); border: 1px solid var(--bord); border-radius: 8px; padding: 4px; }
-.encart-idf svg { display: block; width: 100%; height: auto; }
-.encart-idf span { display: block; text-align: center; font-size: .72rem; color: var(--discret); }
 .zoom { position: absolute; right: 6px; top: 6px; display: flex; flex-direction: column; gap: 4px; }
 .zoom .btn-icone { background: rgba(14, 36, 49, .85); border: 1px solid var(--bord); width: 32px; height: 32px; font-size: 1.1rem; color: var(--texte); }
+/* écran Archives : tout tient dans la hauteur de la fenêtre, la colonne de droite défile seule */
+@media (min-width: 1101px) {
+  .vue-archives { padding-bottom: 16px; }
+  .vue-archives .archives-grille { height: calc(100vh - 64px - 24px - 16px - 58px); }
+  .vue-archives .carte-zone { height: 100%; }
+  .vue-archives .cote-droit { height: 100%; overflow-y: auto; padding-right: 4px; }
+}
+@media (max-width: 1100px) {
+  .zone-carte { height: 70vh; }
+}
 .legende { color: var(--discret); font-size: .82rem; display: flex; align-items: center; gap: 6px 16px; flex-wrap: wrap; margin: 8px 0 0; }
 .legende > span { display: inline-flex; align-items: center; gap: 5px; }
 .leg { display: inline-block; width: 14px; height: 14px; border-radius: 3px; background: #1b6378; }

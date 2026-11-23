@@ -22,9 +22,22 @@
       .concat(Object.keys(d.champs || {}).map(function (k) { return k + ' ' + d.champs[k]; })).join(' '));
   }
 
+  /* Découpe la recherche en mots à trouver et mots à exclure (précédés d'un tiret : -PG).
+   * Les guillemets regroupent plusieurs mots : "Me GALLOIS" ou -"prisonnier de guerre". */
+  function lireRecherche(q) {
+    var inclus = [], exclus = [];
+    var re = /(-?)(?:"([^"]*)"|(\S+))/g, m;
+    while ((m = re.exec(String(q || '')))) {
+      var k = S.cle(m[2] != null ? m[2] : m[3]);
+      if (!k) continue;
+      (m[1] ? exclus : inclus).push(k);
+    }
+    return { inclus: inclus, exclus: exclus };
+  }
+
   /* Filtre commun (liste, fiche de consultation, accueil). */
   function filtre(p) {
-    var mots = S.cle(p.q || '') ? String(p.q).split(/\s+/).map(S.cle).filter(Boolean) : [];
+    var rech = lireRecherche(p.q);
     var statuts = p.statut ? p.statut.split(',') : null;
     var liste = D.etat.data.documents.filter(function (d) {
       if (p.centre && d.centreId !== p.centre) return false;
@@ -32,9 +45,10 @@
       if (p.type && S.cle(d.type) !== S.cle(p.type)) return false;
       if (p.de && (!d.annee || +d.annee < +p.de)) return false;
       if (p.a && (!d.annee || +d.annee > +p.a)) return false;
-      if (mots.length) {
+      if (rech.inclus.length || rech.exclus.length) {
         var t = texteRecherche(d);
-        return mots.every(function (m) { return t.indexOf(m) >= 0; });
+        return rech.inclus.every(function (m) { return t.indexOf(m) >= 0; }) &&
+          !rech.exclus.some(function (m) { return t.indexOf(m) >= 0; });
       }
       return true;
     });
@@ -78,7 +92,7 @@
       '<a class="btn" href="#/saisie">✎ Saisie rapide</a>' +
       '<button class="btn principal" data-nouveau>+ Nouveau document</button></div></div>' +
       '<div class="filtres carte">' +
-      '<input type="search" name="q" placeholder="Nom, cote, notaire, mot des notes…" value="' + esc(p.q || '') + '">' +
+      '<input type="search" name="q" placeholder="Nom, cote, notaire… · -mot pour exclure (ex. -PG)" title="Tous les mots doivent être présents. Un mot précédé d\'un tiret exclut les documents qui le contiennent : -PG. Les guillemets regroupent : &quot;Me GALLOIS&quot;, -&quot;prisonnier de guerre&quot;." value="' + esc(p.q || '') + '">' +
       '<select name="centre">' + U.optionsCentres(p.centre, 'Tous les centres') + '</select>' +
       '<select name="type"><option value="">Tous les types</option>' + typesConnus().map(function (t) {
         return '<option' + (S.cle(t) === S.cle(p.type || '') ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') + '</select>' +
@@ -334,5 +348,5 @@
     }
   }
 
-  root.GA_VUES.documents = { titre: 'Documents', rendu: rendu, filtre: filtre, edite: edite, typesConnus: typesConnus };
+  root.GA_VUES.documents = { titre: 'Documents', rendu: rendu, filtre: filtre, lireRecherche: lireRecherche, edite: edite, typesConnus: typesConnus };
 })(window);

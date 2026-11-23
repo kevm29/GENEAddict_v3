@@ -111,9 +111,7 @@
     var choisi = route.args[0] ? D.centreParId(route.args[0]) : null;
     var rangs = U.centresRanges();
     var onglets = rangs.filter(function (r) { return r.cat.code !== 'AD'; });
-    var outreMer = (rangs.find(function (r) { return r.cat.code === 'AD'; }) || { groupes: [{ centres: [] }] }).groupes[0].centres.filter(function (c) { return c.dep.length === 3; });
-    if (outreMer.length) onglets.push({ cat: { code: 'OM', nom: 'Outre-mer (AD)' }, groupes: [{ titre: 'Archives départementales d\'outre-mer', centres: outreMer }] });
-    var onglet = route.params.onglet || (choisi ? (choisi.categorie === 'AD' ? (choisi.dep.length === 3 ? 'OM' : '') : choisi.categorie) : '') || (onglets[0] && onglets[0].cat.code);
+    var onglet = route.params.onglet || (choisi && choisi.categorie !== 'AD' ? choisi.categorie : '') || (onglets[0] && onglets[0].cat.code);
     var avecDocs = D.etat.data.centres.filter(function (c) { return comptes[c.id]; })
       .sort(function (a, b) { return comptes[b.id].chercher - comptes[a.id].chercher || comptes[b.id].total - comptes[a.id].total; });
 
@@ -129,7 +127,7 @@
       '<div class="archives-grille">' +
       '<div class="carte carte-zone"><div class="zone-carte"></div>' +
       '<p class="legende"><span><span class="leg niv0"></span> aucun document</span><span><span class="leg niv2"></span> documents</span><span><span class="leg a-chercher"></span> actes à chercher</span>' +
-      '<span class="discret">Molette ou double-clic : zoomer · glisser : déplacer</span></p></div>' +
+      '<span class="discret">Molette ou double-clic : zoomer · une fois zoomé, glisser pour se déplacer</span></p></div>' +
       '<div class="cote-droit">' +
       (choisi ? ficheCentre(choisi, comptes) : '<div class="carte"><p>Cliquez sur un département de la carte ou choisissez un centre ci-dessous.</p></div>') +
       (avecDocs.length ? '<div class="carte"><h3>Mes centres en cours</h3><div class="puces">' + avecDocs.map(function (c) { return puce(c, U.libelleCentre(c, true)); }).join('') + '</div></div>' : '') +
@@ -142,7 +140,7 @@
         var modele = g.centres[0];
         return '<div class="groupe"><div class="groupe-titre">' +
           (seul ? puce(modele, g.titre) : '<strong>' + esc(g.titre) + '</strong>') +
-          (ongletActif.cat.code !== 'OM' ? '<button class="btn-icone" title="Ajouter un site à ce groupe" data-ajout-site="' + esc(modele.id) + '">+</button>' : '') + '</div>' +
+          '<button class="btn-icone" title="Ajouter un site à ce groupe" data-ajout-site="' + esc(modele.id) + '">+</button></div>' +
           (seul ? '' : '<div class="puces sous">' + g.centres.map(function (c) {
             return puce(c, c.categorie === 'AD' ? c.dep + ' ' + c.site : (c.site || c.groupe));
           }).join('') + '</div>') + '</div>';
@@ -163,7 +161,7 @@
       editeCentre(null, function (c) { U.va('archives', [c.id]); }, { categorie: m.categorie, sigle: m.sigle, groupe: m.groupe, entraide: '', url: m.url });
     });
     U.$('[data-nouveau]', racine).addEventListener('click', function () {
-      var cat = ongletActif && ongletActif.cat.code !== 'OM' ? ongletActif.cat.code : 'AUTRE';
+      var cat = ongletActif ? ongletActif.cat.code : 'AUTRE';
       editeCentre(null, function (c) { U.va('archives', [c.id]); }, { categorie: cat });
     });
     var mod = U.$('[data-modifier]', racine);

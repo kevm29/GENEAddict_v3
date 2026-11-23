@@ -108,6 +108,13 @@ fs.mkdirSync(OUT, { recursive: true });
   await page.fill('.filtres input[name=q]', 'marigner');
   await page.waitForTimeout(400);
   ok((await page.$$eval('.table-docs tbody tr', (l) => l.length)) === 2, 'recherche « marigner » : 2 résultats');
+  await page.fill('.filtres input[name=q]', '-marigner');
+  await page.waitForTimeout(400);
+  ok((await page.$$eval('.table-docs tbody tr', (l) => l.length)) === 6, 'recherche « -marigner » : 6 résultats (tout sauf Marigner)');
+  await page.fill('.filtres input[name=q]', 'caran -"de la tournelle"');
+  await page.waitForTimeout(400);
+  const nbExcl = await page.$$eval('.table-docs tbody tr', (l) => l.length);
+  ok(nbExcl === 5, 'recherche « caran -\"de la tournelle\" » : ' + nbExcl + ' résultats');
   await page.fill('.filtres input[name=q]', '');
   await page.waitForTimeout(300);
 
@@ -138,12 +145,14 @@ fs.mkdirSync(OUT, { recursive: true });
   // Fiche de consultation
   await page.goto(APP + '#/fiche?centre=' + caran);
   await page.waitForSelector('.papier');
-  const nbFiche = await page.$$eval('.papier-liste tbody tr:not(.vide)', (l) => l.length);
+  const nbFiche = await page.$$eval('.papier-docs li:not(.vide)', (l) => l.length);
   const attendu = await page.evaluate((c) => window.GA_DONNEES.etat.data.documents.filter((d) => d.centreId === c && (d.statut === 'chercher' || d.statut === 'demande')).length, caran);
   ok(nbFiche === attendu && attendu > 0, 'fiche de consultation CARAN : ' + nbFiche + ' lignes / ' + attendu + ' attendues');
   await shot('09-fiche-consultation');
   await page.emulateMedia({ media: 'print' });
-  await page.pdf({ path: path.join(OUT, 'fiche-consultation.pdf'), format: 'A4', landscape: true, printBackground: true });
+  const ligne1 = await page.textContent('.papier-docs li:first-child');
+  ok(/^\s*ET\/\S+ — /.test(ligne1) && !/chercher|Obtenu|Demandé/.test(await page.textContent('.pages')), 'fiche : cote puis infos séparées par des tirets, sans statut : ' + ligne1.trim().slice(0, 70));
+  await page.pdf({ path: path.join(OUT, 'fiche-consultation.pdf'), preferCSSPageSize: true, printBackground: true });
   await page.emulateMedia({ media: 'screen' });
 
   // Dépouillements
@@ -200,6 +209,15 @@ fs.mkdirSync(OUT, { recursive: true });
   await page.evaluate(() => window.GA_DONNEES.verifieFichierExterne());
   ok(await page.evaluate(() => window.GA_DONNEES.etat.data.liens.some((l) => l.nom === 'Ajout externe')), 'modification extérieure du fichier rechargée');
 
+  // ---- Carte : tient dans l'écran, DOM présents
+  await page.goto(APP + '#/archives');
+  await page.waitForSelector('.carte-france');
+  const tient = await page.evaluate(() => ({ h: document.scrollingElement.scrollHeight, v: innerHeight, dom: ['971', '972', '973', '974', '976'].every((c) => document.querySelector('.carte-france path.dep[data-code="' + c + '"]')) }));
+  ok(tient.h <= tient.v + 2 && tient.dom, 'Archives sans défilement (' + tient.h + ' / ' + tient.v + ' px) et DOM sur la carte');
+  await page.click('.carte-france path.dep[data-code="974"]');
+  ok(await page.waitForFunction(() => (document.querySelector('.fiche-centre') || { textContent: '' }).textContent.includes('La Réunion'), null, { timeout: 5000 }).then(() => true, () => false), 'clic sur La Réunion → AD 974');
+  await shot('14b-archives-une-page');
+
   // ---- Carte : étiquettes, liseré découpé, zoom, onglets
   await page.goto(APP + '#/archives/' + ad35);
   await page.waitForSelector('.lisere.choisi');
@@ -208,9 +226,9 @@ fs.mkdirSync(OUT, { recursive: true });
     noms: [...document.querySelectorAll('.carte-france .etiq-nom')].filter((t) => t.style.display !== 'none' && t.parentNode.style.display !== 'none').length,
     clip: document.querySelector('.lisere.choisi').getAttribute('clip-path'),
   }));
-  ok(etiq.nums > 80 && etiq.noms > 20 && /url\(#cp-35\)/.test(etiq.clip), 'carte : ' + etiq.nums + ' numéros, ' + etiq.noms + ' noms, liseré ' + etiq.clip);
+  ok(etiq.nums > 85 && etiq.noms > 20 && /url\(#cp-35\)/.test(etiq.clip), 'carte : ' + etiq.nums + ' numéros, ' + etiq.noms + ' noms, liseré ' + etiq.clip);
   await shot('15-carte-etiquettes');
-  await page.click('[data-z="1.5"]'); await page.click('[data-z="1.5"]');
+  await page.click('[data-z="1.6"]'); await page.click('[data-z="1.6"]');
   const nomsZoom = await page.evaluate(() => [...document.querySelectorAll('.carte-france .etiq-nom')].filter((t) => t.style.display !== 'none' && t.parentNode.style.display !== 'none').length);
   ok(nomsZoom > 0, 'zoom : ' + nomsZoom + ' noms visibles dans la vue zoomée');
   await shot('16-carte-zoom');

@@ -44,10 +44,10 @@ Astuce : ajoutez `index.html` à vos favoris ou créez un raccourci sur le burea
 | Écran | Rôle |
 |---|---|
 | **Accueil** | Compteurs par statut, centres où il reste des actes à chercher, dépouillements en cours, derniers documents modifiés. |
-| **Archives** | Carte des départements avec numéros et noms (zoom à la molette, déplacement à la souris, encart Paris & petite couronne), couleur selon le nombre de documents, liseré pour les actes à chercher. Les autres centres sont rangés par onglets — Archives nationales, Défense (SHD), municipales, bibliothèques, ministères, religieuses, étranger, privées — et regroupés par institution avec leurs sites (ex. *AN (Archives nationales)* → Paris, Pierrefitte-sur-Seine). Fiche de chaque centre : site, entraide FranceGenWeb / FDA, adresse, horaires, n° de lecteur, notes. |
-| **Documents** | Liste filtrable (texte libre, centre, type, période, statut), tri, changement de statut en un clic, sélection multiple, fiche détaillée avec annotations, transcription, étiquettes et historique des statuts. |
+| **Archives** | Carte des départements, outre-mer compris (Guadeloupe, Martinique, Guyane, La Réunion, Mayotte en encarts), avec numéros et noms ; tout l'écran tient sans défiler, la carte reste fixe et se zoome (molette, double-clic, boutons), couleur selon le nombre de documents, liseré pour les actes à chercher. Les autres centres sont rangés par onglets — Archives nationales, Défense (SHD), municipales, bibliothèques, ministères, religieuses, étranger, privées — et regroupés par institution avec leurs sites (ex. *AN (Archives nationales)* → Paris, Pierrefitte-sur-Seine). Fiche de chaque centre : site, entraide FranceGenWeb / FDA, adresse, horaires, n° de lecteur, notes. |
+| **Documents** | Liste filtrable (texte libre — `-PG` exclut les documents contenant « PG », `-"prisonnier de guerre"` une expression —, centre, type, période, statut), tri, changement de statut en un clic, sélection multiple, fiche détaillée avec annotations, transcription, étiquettes et historique des statuts. |
 | **Saisie rapide** | Ajout d'actes **sans formulaire** : texte à balises ou tableau copié depuis Excel, avec suggestions à la frappe après `@`, aperçu, contrôle des erreurs et détection des doublons. Les balises que vous inventez (`@parrain`, `@source`…) sont gardées comme champs personnalisés. Voir [`docs/FORMAT_SAISIE.md`](docs/FORMAT_SAISIE.md). |
-| **Fiche de consultation** | Feuille A4 à emporter aux archives : cotes à demander triées, cases à cocher, colonne de notes, rappel des dépouillements en cours, lignes vides. Au retour, on met à jour les statuts directement sur la fiche. |
+| **Fiche de consultation** | Feuille A4 portrait à emporter aux archives : une ligne par document, la cote puis les informations séparées par des tirets (date — acte — personnes — notaire…), case à cocher, rappel des dépouillements en cours, cadre de notes ; annotations et lignes vides en option. |
 | **Dépouillements** | Suivi page à page de la lecture d'un registre, d'une étude notariale ou d'un fonds. |
 | **Liens** | Sites utiles, rangés par catégorie. |
 | **Ma base** | Dossier d'enregistrement, export JSON / CSV, restauration, reprise de l'ancienne base MySQL. |
@@ -92,12 +92,13 @@ js/saisie.js              lecture du texte à balises et des tableaux (testé so
 js/donnees.js             la base : fichier JSON, sauvegardes, dossier a-importer/, IndexedDB
 js/donnees-initiales.js   centres et liens proposés dans une base neuve
 js/carte-france.js        tracé des départements et position des étiquettes
-js/carte.js               carte interactive (zoom, étiquettes, liseré, encart Paris)
+js/carte.js               carte interactive (zoom, étiquettes, liseré, encarts outre-mer)
 js/autocompletion.js      suggestions de la saisie rapide
 js/ui.js                  outils d'interface (fenêtres, notifications, routeur)
 js/vue-*.js               un fichier par écran
 js/app.js                 démarrage et menu
 tests/                    tests du parseur (node --test) et test de bout en bout (Playwright)
+outils/                   scripts Python ayant servi à préparer la carte (étiquettes, outre-mer)
 ```
 
 Le fichier `geneaddict.json` est lisible et modifiable à la main ; s'il change pendant que
@@ -106,6 +107,24 @@ quand la fenêtre reprend le focus.
 
 Tests : `npm test` (parseur), `npm run test:navigateur` (parcours complet dans Chrome,
 nécessite `npm install`).
+
+## Mettre le site en ligne (GitHub Pages)
+
+L'application peut aussi être servie par GitHub Pages, sans rien changer au code. Les données,
+elles, ne vont jamais sur GitHub : elles restent dans le dossier choisi sur l'ordinateur
+(ou dans le navigateur).
+
+GitHub Pages n'est gratuit que pour un **dépôt public** (ou avec un abonnement GitHub Pro) :
+le code de l'application devient alors visible de tous, pas vos données.
+
+1. *Settings → General → Danger Zone → Change visibility → Public* (si besoin).
+2. *Settings → Pages → Build and deployment* : *Source* = **Deploy from a branch**,
+   branche **main**, dossier **/ (root)**, *Save*.
+3. Après une minute, le site est en ligne à l'adresse `https://<compte>.github.io/GENEAddict_v3/`.
+
+Ouvert depuis cette adresse ou depuis `index.html`, le navigateur considère qu'il s'agit de deux
+sites différents : la copie gardée dans le navigateur n'est pas partagée, mais il suffit de
+choisir le **même dossier** dans les deux cas pour retrouver la même base.
 
 ## Pistes pour la suite
 
@@ -118,4 +137,5 @@ nécessite `npm install`).
 ## Crédits
 
 Carte des départements : [@svg-maps/france.departments](https://github.com/VictorCazanave/svg-maps)
-par Victor Cazanave, licence CC BY 4.0.
+par Victor Cazanave, licence CC BY 4.0. Départements d'outre-mer : IGN Admin Express (Licence
+ouverte Etalab), via [france-geojson](https://github.com/gregoiredavid/france-geojson).
