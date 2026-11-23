@@ -31,7 +31,7 @@ Le script :
   les visiteurs anonymes peuvent **ajouter** des réponses, rien d'autre — ils ne peuvent ni lire
   les réponses des autres, ni les modifier, ni les effacer ;
 - crée une vue `reponses_etudes_dernieres` qui ne garde que la dernière version de chaque
-  réponse (un participant peut corriger et renvoyer).
+  réponse (si un participant renvoie une réponse à la même question).
 
 ## 3. Récupérer l'adresse et la clé publique
 

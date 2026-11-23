@@ -135,7 +135,8 @@ de l'année ; les images `motif.jpg` et `bandeau.jpg` du dossier de l'année fon
 Avec le mot de passe des énoncés, chaque défi a une zone de réponse (brouillon gardé dans le
 navigateur ; une fois validée par Entrée ou en cliquant ailleurs, la réponse est masquée sous des
 points et ne se réaffiche qu’avec le petit œil, contre la copie des voisins). Le bouton « Envoyer mes réponses » les enregistre dans une table Supabase, une ligne
-par réponse remplie. Mise en place : voir [docs/SUPABASE.md](docs/SUPABASE.md) (script SQL
+par réponse remplie ; une fois l'envoi réussi, les cases et les brouillons sont vidés (en cas
+d'échec, tout reste en place). Mise en place : voir [docs/SUPABASE.md](docs/SUPABASE.md) (script SQL
 `docs/supabase.sql`, puis URL du projet et clé publique dans `etudes/supabase.js`). Tant que ce
 fichier n'est pas rempli, le bouton reste grisé.
 

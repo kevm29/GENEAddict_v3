@@ -367,6 +367,9 @@ fs.mkdirSync(OUT, { recursive: true });
   ok(env && env.url.endsWith('/rest/v1/reponses_etudes') && env.headers.apikey === 'sb_publishable_TEST' && !env.headers.authorization
     && env.body.length === 1 && env.body[0].defi === 1 && env.body[0].tp === 'tp2' && env.body[0].participant === 'Test',
     'envoi Supabase : une ligne par réponse remplie, clé publique dans « apikey »');
+  ok((await page.inputValue('.saisie-reponse[data-k="0"]')) === '' && await page.isHidden('.voile-reponse >> nth=0'), 'après l\'envoi : cases vidées');
+  await page.goto(APP + '#/etudes/2024/tp1'); await page.goto(APP + '#/etudes/2024/tp2'); await page.waitForSelector('.saisie-reponse');
+  ok((await page.$$eval('.saisie-reponse', (l) => l.every((z) => z.value === ''))), 'au retour sur le TP : toujours vides (brouillons effacés)');
   await shot('24-etude-reponses');
 
   // Mobile
