@@ -5,11 +5,14 @@
   var D = root.GA_DONNEES, U = root.GA_UI, S = root.GA_SAISIE, esc = U.esc;
   var LIMITE = 300;
 
+  var NATUREL = new Intl.Collator('fr', { numeric: true, sensitivity: 'base' });
+
   var TRIS = {
     date: { lib: 'Date', f: function (d) { return D.cleTri(d); } },
     nom: { lib: 'Nom', f: function (d) { var p = d.personnes[0]; return p ? S.cle(p.nom) + ' ' + S.cle(p.prenom) : 'zzzz'; } },
     notaire: { lib: 'Notaire', f: function (d) { return S.cle(d.notaire) || 'zzzz'; } },
-    cote: { lib: 'Cote', f: function (d) { return S.cle(d.cote) || 'zzzz'; } },
+    // naturel : les nombres d'une cote se comparent comme des nombres (AJ/41/447 avant AJ/41/1873)
+    cote: { lib: 'Cote', f: function (d) { return S.cle(d.cote) || '\uffff'; }, naturel: true },
     type: { lib: 'Type', f: function (d) { return S.cle(d.type) || 'zzzz'; } },
     centre: { lib: 'Centre', f: function (d) { var c = D.centreParId(d.centreId); return c ? (c.categorie === 'AD' ? '1' + c.dep : '0' + U.libelleCentre(c, true)) : 'zzzz'; } },
     modifie: { lib: 'Modifié récemment', f: function (d) { return d.modifie; }, inverse: true }
@@ -55,7 +58,8 @@
     var tri = TRIS[p.tri] || TRIS.date;
     liste.sort(function (a, b) {
       var x = tri.f(a), y = tri.f(b);
-      var r = x < y ? -1 : x > y ? 1 : D.cleTri(a).localeCompare(D.cleTri(b));
+      var r = tri.naturel ? NATUREL.compare(x, y) : x < y ? -1 : x > y ? 1 : 0;
+      if (!r) r = D.cleTri(a).localeCompare(D.cleTri(b));
       return tri.inverse ? -r : r;
     });
     return liste;
