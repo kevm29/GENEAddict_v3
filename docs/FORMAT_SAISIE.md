@@ -39,7 +39,7 @@ recopie des notes). Les lignes qui commencent par `#` sont des commentaires.
 
 | Balise | Autres noms acceptés | Contenu |
 |---|---|---|
-| `@centre` | `@archives`, `@dep`, `@service` | `CARAN`, `35`, `AD35`, `Ille-et-Vilaine`, `SHD Vincennes`… Un centre inconnu peut être créé automatiquement. |
+| `@centre` | `@archives`, `@dep`, `@service` | le code du centre (`CARAN`, `AN-PIERREFITTE`, `SHD-CAEN`, `AM-BREST`, `BNF-RICHELIEU`…), un numéro de département (`35`), ou sigle + site (`SHD Caen`, `AN Pierrefitte`, `AM Brest`). Un centre inconnu peut être créé automatiquement. |
 | `@date` | | `02/06/1642` · `2.6.1642` · `??/06/1642` · `06/1642` · `1642` · `1642-06-02` · `2 juin 1642` · `1er juin 1642` · `vers 1650` · `1650-1660` |
 | `@jour` `@mois` `@annee` | | si l'on préfère séparer la date |
 | `@type` | `@acte`, `@nature` | Procuration, CM, IAD, Testament… |
@@ -53,6 +53,47 @@ recopie des notes). Les lignes qui commencent par `#` sont des commentaires.
 | `@note` | `@notes`, `@annotation`, `@remarque` | annotations ; **les lignes suivantes sans balise s'y ajoutent** |
 | `@transcription` | `@texte` | idem, sur plusieurs lignes |
 | `@tags` | `@etiquettes` | séparées par des virgules |
+
+### Vos propres balises
+
+Toute balise qui n'est pas dans le tableau ci-dessus est **gardée telle quelle** comme
+*champ personnalisé* du document : pas besoin de la déclarer, ni de me la demander.
+
+```text
+@date 1700
+@type Baptême
+@personne Jean MURET
+@parrain Yves KERBRAT
+@marraine Anne LE GALL
+@source Registre BMS de Saint-Germain, vue 12
+@lieu-inhumation cimetière de l'Est
+```
+
+- le nom d'une balise s'écrit **d'un seul mot** : lettres, chiffres et tirets
+  (`@lieu-inhumation`, pas `@lieu inhumation`) ; accents et majuscules sont simplifiés
+  (`@Témoin-Mariage` devient `@temoin-mariage`) ;
+- comme `@note`, les lignes suivantes sans balise s'ajoutent à la valeur ;
+- l'aperçu signale chaque **nouvelle** balise, pour repérer une faute de frappe
+  (`@parain` au lieu de `@parrain`) avant d'ajouter ;
+- les champs personnalisés apparaissent dans la fiche du document (modifiables, et on peut en
+  ajouter à la main), dans la recherche, dans l'export CSV et sur la fiche imprimée ;
+- dans **Ma base → Balises personnalisées**, on peut donner une description à une balise, ou en
+  déclarer une à l'avance pour qu'elle soit proposée dans les suggestions.
+
+Attention : quelques mots sont déjà des **synonymes** de balises de base et ne créent donc pas de
+champ personnalisé : `@lieu` (= `@ville`), `@temoins` (= `@personne`), `@objet` (= `@description`)…
+La liste complète est dans la colonne « Autres noms acceptés ».
+
+### Suggestions à la frappe
+
+En tapant `@` en début de ligne, la liste des balises s'affiche (balises de base, puis les
+vôtres en vert) et se filtre à mesure que l'on tape. Après une balise, des valeurs sont
+proposées : les centres pour `@centre` (par code ou par nom : taper `caen` propose `SHD-CAEN`),
+les statuts, et les valeurs déjà présentes dans la base pour `@type`, `@notaire`, `@ville`,
+`@personne`, `@tags` et les balises personnalisées.
+
+<kbd>↑</kbd> <kbd>↓</kbd> pour choisir · <kbd>Entrée</kbd> ou <kbd>Tab</kbd> pour valider ·
+<kbd>Échap</kbd> pour fermer.
 
 ### Valeurs communes à plusieurs actes
 
@@ -105,7 +146,7 @@ date        type                     personnes               notaire   cote     
 01/05/1657  Procuration              Roger de LA TOURNELLE   JEHAN     ET/XXXVIII/656  demandé    CARAN
 ```
 
-Les colonnes inconnues sont ignorées (et signalées). **Sans ligne d'en-tête**, les colonnes sont
+Les colonnes inconnues deviennent des **champs personnalisés** (et sont signalées). **Sans ligne d'en-tête**, les colonnes sont
 lues dans cet ordre : `date`, `type`, `personnes`, `notaire`, `cote`, `description`.
 
 ### Reprendre l'ancienne base (WampServer / MySQL)

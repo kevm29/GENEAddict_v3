@@ -54,27 +54,64 @@
     }).join(' <span class="et">&amp;</span> ');
   }
 
+  /* Libellé court (« AD 35 », « AN Paris », « SHD Caen ») ou nom complet. */
   function libelleCentre(c, court) {
     if (!c) return '—';
-    if (court) return c.type === 'AD' ? 'AD ' + c.dep : c.code;
-    return c.nom;
+    if (!court) return c.nom;
+    if (c.categorie === 'AD') return 'AD ' + c.dep;
+    return (c.sigle || c.code) + (c.site ? ' ' + c.site : '');
+  }
+
+  /* Titre d'un groupe : « AN (Archives nationales) ». */
+  function titreGroupe(c) {
+    var mots = S.sansAccents(c.groupe || '').toLowerCase().split(/[^a-z0-9]+/);
+    if (!c.sigle || S.cle(c.sigle) === S.cle(c.groupe) || mots.indexOf(S.cle(c.sigle)) >= 0) return c.groupe || c.sigle;
+    return c.sigle + ' (' + c.groupe + ')';
+  }
+
+  function categories() {
+    return root.GA_INIT.categories;
+  }
+
+  /* Centres rangés par catégorie puis par groupe, dans l'ordre d'affichage. */
+  function centresRanges() {
+    var D = root.GA_DONNEES;
+    var parCat = {};
+    D.etat.data.centres.forEach(function (c) { (parCat[c.categorie] = parCat[c.categorie] || []).push(c); });
+    return categories().map(function (cat) {
+      var cs = parCat[cat.code] || [];
+      if (cat.code === 'AD') {
+        cs.sort(function (a, b) { return a.dep.localeCompare(b.dep, 'fr', { numeric: true }); });
+        return { cat: cat, groupes: cs.length ? [{ titre: 'Archives départementales', centres: cs }] : [] };
+      }
+      var groupes = {}, ordre = [];
+      cs.forEach(function (c) {
+        var k = titreGroupe(c);
+        if (!groupes[k]) { groupes[k] = []; ordre.push(k); }
+        groupes[k].push(c);
+      });
+      ordre.sort(function (a, b) { return a.localeCompare(b, 'fr'); });
+      return { cat: cat, groupes: ordre.map(function (k) {
+        return { titre: k, centres: groupes[k].sort(function (a, b) { return (a.site || '').localeCompare(b.site || '', 'fr'); }) };
+      }) };
+    }).filter(function (x) { return x.groupes.length; });
   }
 
   function optionsCentres(choisi, vide) {
-    var D = root.GA_DONNEES;
-    var cs = D.etat.data.centres.slice();
-    var groupes = { AD: [], national: [], AM: [], autre: [] };
-    cs.forEach(function (c) { (groupes[c.type] || groupes.autre).push(c); });
-    groupes.AD.sort(function (a, b) { return a.dep.localeCompare(b.dep, 'fr', { numeric: true }); });
-    ['national', 'AM', 'autre'].forEach(function (k) { groupes[k].sort(function (a, b) { return a.nom.localeCompare(b.nom, 'fr'); }); });
-    var titres = { national: 'Archives nationales', AM: 'Archives municipales', autre: 'Autres centres', AD: 'Archives départementales' };
     var h = vide != null ? '<option value="">' + esc(vide) + '</option>' : '';
-    ['national', 'AM', 'autre', 'AD'].forEach(function (k) {
-      if (!groupes[k].length) return;
-      h += '<optgroup label="' + titres[k] + '">' + groupes[k].map(function (c) {
-        var lib = c.type === 'AD' ? c.dep + ' — ' + c.nom.replace(/^Archives départementales — /, '') : c.nom;
-        return '<option value="' + esc(c.id) + '"' + (c.id === choisi ? ' selected' : '') + '>' + esc(lib) + '</option>';
-      }).join('') + '</optgroup>';
+    var rang = centresRanges();
+    // les départements en dernier : ce sont les plus nombreux
+    rang.sort(function (a, b) { return (a.cat.code === 'AD') - (b.cat.code === 'AD'); });
+    rang.forEach(function (r) {
+      h += '<optgroup label="' + esc(r.cat.nom) + '">';
+      r.groupes.forEach(function (g) {
+        g.centres.forEach(function (c) {
+          var lib = c.categorie === 'AD' ? c.dep + ' — ' + c.site
+            : (g.centres.length > 1 || c.site ? titreGroupe(c) + (c.site ? ' — ' + c.site : '') : titreGroupe(c));
+          h += '<option value="' + esc(c.id) + '"' + (c.id === choisi ? ' selected' : '') + '>' + esc(lib) + '</option>';
+        });
+      });
+      h += '</optgroup>';
     });
     return h;
   }
@@ -170,7 +207,7 @@
   root.GA_UI = {
     esc: esc, $: $, $$: $$, on: on, debounce: debounce, urlSure: urlSure,
     pastilleStatut: pastilleStatut, selectStatut: selectStatut, personnesHTML: personnesHTML,
-    libelleCentre: libelleCentre, optionsCentres: optionsCentres, dateCourte: dateCourte,
+    libelleCentre: libelleCentre, titreGroupe: titreGroupe, categories: categories, centresRanges: centresRanges, optionsCentres: optionsCentres, dateCourte: dateCourte,
     toast: toast, ouvreModale: ouvreModale, fermeModale: fermeModale, confirme: confirme,
     routeActuelle: routeActuelle, lien: lien, va: va, remplaceParams: remplaceParams
   };

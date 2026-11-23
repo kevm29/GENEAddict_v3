@@ -43,7 +43,9 @@
     '<tr><td><code>@description</code></td><td>résumé court</td></tr>' +
     '<tr><td><code>@note</code></td><td>annotations ; les lignes suivantes sans balise s\'y ajoutent</td></tr>' +
     '<tr><td><code>@transcription</code> <code>@tags</code></td><td>texte, étiquettes séparées par des virgules</td></tr></table>' +
-    '<p>On peut aussi écrire <code>Date : 1642</code> au lieu de <code>@date 1642</code>. Un bloc qui commence par <code>@par-defaut</code> s\'applique à tous les actes suivants.</p></div>' +
+    '<p>On peut aussi écrire <code>Date : 1642</code> au lieu de <code>@date 1642</code>. Un bloc qui commence par <code>@par-defaut</code> s\'applique à tous les actes suivants.</p>' +
+    '<p><strong>Vos propres balises :</strong> toute autre balise (<code>@parrain</code>, <code>@source</code>, <code>@lieu-inhumation</code>…) est gardée comme <em>champ personnalisé</em> du document, sans rien déclarer. Le nom s\'écrit d\'un seul mot (tirets autorisés). Pour leur donner une description qui s\'affiche dans les suggestions, voir <a href="#/donnees">Ma base → Balises personnalisées</a>.</p>' +
+    '<p>En tapant <code>@</code> en début de ligne, des suggestions s\'affichent (↑ ↓ pour choisir, Entrée ou Tab pour valider, Échap pour fermer), puis des valeurs connues pour le centre, le statut, le type, le notaire…</p></div>' +
     '<div><h3>Tableau</h3><p>Copiez des cellules depuis Excel / LibreOffice et collez-les ici, ou collez un CSV (séparateur <code>;</code> <code>,</code> <code>|</code> ou tabulation).</p>' +
     '<p>La première ligne donne le nom des colonnes : <code>date</code>, <code>type</code>, <code>personnes</code>, <code>nom</code>, <code>prénom</code>, <code>notaire</code>, <code>ville</code>, <code>cote</code>, <code>statut</code>, <code>centre</code>, <code>description</code>, <code>notes</code>… Sans en-tête, l\'ordre attendu est : date, type, personnes, notaire, cote, description.</p>' +
     '<p><strong>Ancienne base :</strong> l\'export CSV de la table <code>docs</code> depuis phpMyAdmin (colonnes jour, mois, annee, p1, n1, p2, n2, dep, statut…) est reconnu tel quel.</p>' +
@@ -67,7 +69,7 @@
       '<label>Format <select name="format"><option value="auto">Détection automatique</option><option value="balises">Texte à balises</option><option value="tableau">Tableau / CSV</option></select></label>' +
       '<label>Centre si non précisé <select name="centre">' + U.optionsCentres(brouillon.centre, '— aucun —') + '</select></label>' +
       '<label>Statut si non précisé ' + U.selectStatut(brouillon.statut || 'chercher', 'name="statut"') + '</label></div>' +
-      '<textarea class="zone-texte" spellcheck="false" placeholder="Collez ou tapez ici vos actes…\n\n@date 02/06/1642\n@type Procuration\n@personne Gentien de MARIGNER\n@cote ET/LXXXV/366\n\n— ou collez directement des lignes copiées depuis Excel."></textarea>' +
+      '<div class="zone-texte-cadre"><textarea class="zone-texte" spellcheck="false" placeholder="Collez ou tapez ici vos actes…\n\n@date 02/06/1642\n@type Procuration\n@personne Gentien de MARIGNER\n@cote ET/LXXXV/366\n\n— ou collez directement des lignes copiées depuis Excel."></textarea><ul class="suggestions" hidden role="listbox"></ul></div>' +
       '<p class="discret">Astuce : glissez-déposez un fichier .txt ou .csv dans la zone. <kbd>Ctrl</kbd>+<kbd>Entrée</kbd> pour ajouter.</p></div>' +
       '<div class="carte apercu"><div class="apercu-tete"><h2>Aperçu</h2><span class="resume"></span></div>' +
       '<label class="case"><input type="checkbox" name="creerCentres" checked> Créer les centres inconnus</label>' +
@@ -83,6 +85,8 @@
     var resume = U.$('.resume', racine);
     var btnAjouter = U.$('[data-ajouter]', racine);
     var creerCentres = U.$('[name=creerCentres]', racine);
+    // suggestions à la frappe (attachées en premier pour intercepter Entrée / Tab quand la liste est ouverte)
+    root.GA_AUTOCOMPLETION.attache(zone, U.$('.suggestions', racine), function () { prepareVite(); });
 
     zone.value = brouillon.texte;
     selFormat.value = brouillon.format;
@@ -127,6 +131,8 @@
       btnAjouter.disabled = !n;
       btnAjouter.textContent = 'Ajouter ' + n + ' acte' + (n > 1 ? 's' : '');
 
+      var connues = {};
+      D.balisesPerso().forEach(function (b) { connues[b.nom] = 1; });
       var globaux = (resultat.erreurs || []).map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('');
       liste.innerHTML = (globaux ? '<ul class="messages">' + globaux + '</ul>' : '') +
         actes.map(function (x, i) {
@@ -134,6 +140,9 @@
           var msgs = a._erreurs.map(function (m) { return '<li class="err">' + esc(m) + '</li>'; })
             .concat(a._avertissements.map(function (m) { return '<li>' + esc(m) + '</li>'; }));
           if (x.doublon) msgs.unshift('<li class="dbl">Semble déjà présent dans la base (même cote, date et nom) — décoché.</li>');
+          Object.keys(a.champs).forEach(function (k) {
+            if (!connues[k]) msgs.push('<li class="info">Nouvelle balise @' + esc(k) + ' : elle sera gardée comme champ personnalisé.</li>');
+          });
           if (x.centreInconnu) msgs.push('<li>Centre « ' + esc(x.centreInconnu) + ' » inconnu' + (creerCentres.checked ? ' : il sera créé.' : ' : l\'acte sera rangé sans centre.') + '</li>');
           var centre = x.centre ? U.libelleCentre(x.centre, true) : (x.centreInconnu ? x.centreInconnu + ' (nouveau)' : '—');
           return '<div class="apercu-acte' + (x.inclus ? '' : ' exclu') + '" data-i="' + i + '">' +
@@ -143,7 +152,8 @@
             (U.personnesHTML(a.personnes) || '<em>personne ?</em>') + '</div>' +
             '<div class="apercu-ligne2">' + (a.notaire ? 'Me ' + esc(a.notaire) + ' · ' : '') + (a.ville ? esc(a.ville) + ' · ' : '') +
             '<span class="mono">' + esc(a.cote || 'sans cote') + '</span> · ' + esc(centre) + ' · ' + U.pastilleStatut(a.statut) +
-            (a.notes ? ' · <span title="' + esc(a.notes) + '">✎ notes</span>' : '') + '</div>' +
+            (a.notes ? ' · <span title="' + esc(a.notes) + '">✎ notes</span>' : '') +
+            Object.keys(a.champs).map(function (k) { return ' · <span class="perso">@' + esc(k) + '</span> ' + esc(a.champs[k].split('\n')[0]); }).join('') + '</div>' +
             (msgs.length ? '<ul class="messages">' + msgs.join('') + '</ul>' : '') + '</div></div>';
         }).join('');
     }

@@ -141,7 +141,8 @@
       ligne('Centre', esc(c ? c.nom : '')) + ligne('Cote', esc(d.cote), 'mono') +
       ligne('Notaire', esc(d.notaire ? 'Me ' + d.notaire : '')) + ligne('Lieu', esc(d.ville)) +
       ligne('Statut', esc(S.STATUTS[d.statut].libelle)) + ligne('Description', esc(d.description)) +
-      ligne('Étiquettes', esc(d.tags.join(', '))) + '</table>' +
+      ligne('Étiquettes', esc(d.tags.join(', '))) +
+      Object.keys(d.champs || {}).map(function (k) { return ligne(esc(k.charAt(0).toUpperCase() + k.slice(1).replace(/-/g, ' ')), esc(d.champs[k])); }).join('') + '</table>' +
       (d.notes ? '<h2>Annotations</h2><div class="papier-texte">' + esc(d.notes) + '</div>' : '') +
       (d.transcription ? '<h2>Transcription</h2><div class="papier-texte">' + esc(d.transcription) + '</div>' : '') +
       '<h2>Notes</h2><div class="papier-lignes"></div>' +

@@ -7,6 +7,8 @@
   function rendu(racine) {
     var e = D.etat, d = e.data;
     var taille = new Blob([JSON.stringify(d)]).size;
+    var perso = D.balisesPerso(), usages = {};
+    d.documents.forEach(function (doc) { Object.keys(doc.champs || {}).forEach(function (k) { usages[k] = (usages[k] || 0) + 1; }); });
     var etatTxt;
     if (e.mode === 'dossier' && !e.aReconnecter) {
       etatTxt = '<p class="txt-obtenu"><strong>Enregistrement automatique actif</strong> dans le dossier « ' + esc(e.nomDossier) + ' ».</p>' +
@@ -37,6 +39,20 @@
       '<div class="carte"><h2>Restaurer / repartir de zéro</h2><p>Remplace toute la base actuelle par un fichier geneaddict.json (une sauvegarde par exemple).</p>' +
       '<div class="actions gauche"><label class="btn">Restaurer depuis un fichier…<input type="file" accept=".json,application/json" hidden data-restaurer></label>' +
       '<button class="btn danger" data-vide>Nouvelle base vide</button></div></div>' +
+      '<div class="carte large balises-perso"><h2>Balises personnalisées</h2>' +
+      '<p>En plus des balises de base, vous pouvez écrire <strong>n\'importe quelle balise</strong> dans la saisie rapide (<code>@parrain</code>, <code>@source</code>, <code>@lieu-inhumation</code>…) : elle est gardée comme champ du document, sans rien déclarer. ' +
+      'Déclarez-la ici pour lui donner une description et la voir proposée dans les suggestions avant même de l\'avoir utilisée.</p>' +
+      '<table class="table-balises"><thead><tr><th>Balise</th><th>Description</th><th>Utilisée dans</th><th></th></tr></thead><tbody>' +
+      (perso.length ? perso.map(function (b) {
+        var declaree = d.balises.some(function (x) { return x.nom === b.nom; });
+        return '<tr data-nom="' + esc(b.nom) + '"><td class="mono">@' + esc(b.nom) + '</td>' +
+          '<td><input value="' + esc(b.description || '') + '" placeholder="description…" data-desc></td>' +
+          '<td>' + (usages[b.nom] || 0) + ' document' + ((usages[b.nom] || 0) > 1 ? 's' : '') + '</td>' +
+          '<td>' + (declaree && !usages[b.nom] ? '<button class="btn-icone" data-suppr-balise title="Retirer">✕</button>' : '') + '</td></tr>';
+      }).join('') : '<tr><td colspan="4" class="discret">Aucune pour l\'instant.</td></tr>') +
+      '</tbody></table>' +
+      '<form class="ajout-balise"><span class="mono">@</span><input name="nom" placeholder="nom-de-la-balise" required>' +
+      '<input name="description" placeholder="Description (facultatif)"><button class="btn">Déclarer</button></form></div>' +
       '<div class="carte large"><h2>Reprendre les données de l\'ancien site (WampServer)</h2><ol>' +
       '<li>Démarrez une dernière fois WampServer et ouvrez phpMyAdmin, base <code>docach</code>.</li>' +
       '<li>Table <code>docs</code> → onglet <em>Exporter</em> → format <em>CSV</em>, en cochant « Afficher les noms de colonnes en première ligne ».</li>' +
@@ -50,6 +66,22 @@
     if ((b = U.$('[data-reco]', racine))) b.addEventListener('click', function () { D.reconnecter().catch(erreur); });
     if ((b = U.$('[data-oublier]', racine))) b.addEventListener('click', function () {
       U.confirme('La base restera dans ce navigateur et le fichier ne sera plus mis à jour. Continuer ?', 'Continuer').then(function (ok) { if (ok) D.oublierDossier(); });
+    });
+    U.$('.ajout-balise', racine).addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      try {
+        var nom = D.declareBalise({ nom: ev.target.elements.nom.value, description: ev.target.elements.description.value.trim() });
+        U.toast('Balise @' + nom + ' déclarée.', 'ok');
+        root.GA_APP.affiche();
+      } catch (err) { U.toast(err.message, 'erreur'); }
+    });
+    U.on(racine, 'change', '[data-desc]', function (ev, el) {
+      D.declareBalise({ nom: el.closest('tr').dataset.nom, description: el.value.trim() });
+      U.toast('Description enregistrée.', 'ok');
+    });
+    U.on(racine, 'click', '[data-suppr-balise]', function (ev, el) {
+      D.supprimeBalise(el.closest('tr').dataset.nom);
+      root.GA_APP.affiche();
     });
     U.$('[data-json]', racine).addEventListener('click', D.exporteJSON);
     U.$('[data-csv]', racine).addEventListener('click', D.exporteCSV);

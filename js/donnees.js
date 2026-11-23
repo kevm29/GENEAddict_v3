@@ -19,7 +19,7 @@
   var DOSSIER_IMPORT = 'a-importer';
   var DOSSIER_IMPORTES = 'importes';
   var NB_SAUVEGARDES = 30;
-  var VERSION = 1;
+  var VERSION = 2;
 
   // ------------------------------------------------------------ IndexedDB (copie locale + dossier mémorisé)
 
@@ -75,8 +75,34 @@
       }),
       documents: [],
       depouillements: [],
-      liens: root.GA_INIT.liens.map(function (l) { return Object.assign({ id: id() }, l); })
+      liens: root.GA_INIT.liens.map(function (l) { return Object.assign({ id: id() }, l); }),
+      balises: []
     };
+  }
+
+  /* Version 1 → 2 : catégories, sigle / groupe / site pour les centres, nouveaux centres proposés. */
+  function migreCentres(d) {
+    var deps = root.GA_CARTE ? root.GA_CARTE.departements : [];
+    var defauts = root.GA_INIT.centresParDefaut(deps);
+    var parCode = {}, presents = {};
+    defauts.forEach(function (c) { parCode[S.cle(c.code)] = c; });
+    d.centres.forEach(function (c) {
+      presents[S.cle(c.code)] = 1;
+      if (c.categorie) return;
+      var def = parCode[S.cle(c.code)];
+      if (def) {
+        ['categorie', 'sigle', 'groupe', 'site', 'detail', 'nom'].forEach(function (k) { c[k] = def[k]; });
+        if (!c.url) c.url = def.url;
+        if (!c.entraide) c.entraide = def.entraide;
+      } else {
+        c.categorie = c.type === 'AD' ? 'AD' : c.type === 'AM' ? 'AM' : c.type === 'national' ? 'AN' : 'AUTRE';
+        c.sigle = c.code; c.groupe = c.nom; c.site = ''; c.detail = '';
+      }
+      delete c.type;
+    });
+    defauts.forEach(function (def) {
+      if (!presents[S.cle(def.code)]) d.centres.push(Object.assign({ id: id(), adresse: '', horaires: '', lecteur: '', notes: '' }, def));
+    });
   }
 
   /* Complète une base lue sur disque (champs manquants, anciennes versions). */
@@ -85,7 +111,14 @@
     d.centres = d.centres || [];
     d.depouillements = d.depouillements || [];
     d.liens = d.liens || [];
+    d.balises = d.balises || [];
+    if (!d.version || d.version < 2) migreCentres(d);
+    d.centres.forEach(function (c) {
+      ['sigle', 'groupe', 'site', 'detail', 'dep', 'url', 'entraide', 'adresse', 'horaires', 'lecteur', 'notes'].forEach(function (k) { if (c[k] == null) c[k] = ''; });
+      if (!c.categorie) c.categorie = 'AUTRE';
+    });
     d.documents.forEach(function (doc) {
+      doc.champs = doc.champs || {};
       doc.personnes = doc.personnes || [];
       doc.tags = doc.tags || [];
       doc.historique = doc.historique || [];
@@ -331,10 +364,14 @@
   // ------------------------------------------------------------ centres
 
   var ALIAS_CENTRES = {
-    an: 'CARAN', archivesnationales: 'CARAN', caran: 'CARAN', minutiercentral: 'CARAN',
+    an: 'CARAN', archivesnationales: 'CARAN', caran: 'CARAN', minutiercentral: 'CARAN', anparis: 'CARAN',
+    pierrefitte: 'AN-PIERREFITTE', anpierrefitte: 'AN-PIERREFITTE',
     shd: 'SHD-V', shdvincennes: 'SHD-V', vincennes: 'SHD-V', shdbrest: 'SHD-B',
+    davcc: 'SHD-CAEN', bavcc: 'SHD-CAEN', capm: 'SHD-PAU', caapc: 'SHD-CHATELLERAULT',
     its: 'AROLSEN', itsbadarolsen: 'AROLSEN', arolsen: 'AROLSEN', badarolsen: 'AROLSEN',
-    gallica: 'BNF', bnf: 'BNF', croixrouge: 'CICR'
+    gallica: 'BNF', bnf: 'BNF', bnfmitterrand: 'BNF', bnffrancoismitterrand: 'BNF', richelieu: 'BNF-RICHELIEU',
+    croixrouge: 'CICR', courneuve: 'MAE-COURNEUVE', lacourneuve: 'MAE-COURNEUVE', archivesdiplomatiques: 'MAE-COURNEUVE',
+    prefecturedepolice: 'APP', archivesdeparis: 'AD75', dresden: 'DRESDE'
   };
 
   function centreParId(i) {
@@ -353,24 +390,29 @@
     if (ALIAS_CENTRES[k]) code = ALIAS_CENTRES[k];
     var c = cs.find(function (x) { return S.cle(x.code).toUpperCase() === code; });
     if (c) return c;
-    c = cs.find(function (x) { return S.cle(x.nom) === k; });
+    c = cs.find(function (x) {
+      return S.cle(x.nom) === k || (x.site && (S.cle(x.sigle + x.site) === k || S.cle(x.groupe + x.site) === k));
+    });
     if (c) return c;
     // « Archives départementales d'Ille-et-Vilaine », « AD Ille-et-Vilaine », « Ille-et-Vilaine »
     var sansPrefixe = k.replace(/^(archivesdepartementales|archivesdep|ad)(de|du|des|d)?/, '');
     if (sansPrefixe.length >= 3) {
-      c = cs.find(function (x) { return x.type === 'AD' && S.cle(x.nom).replace(/^archivesdepartementales/, '') === sansPrefixe; });
+      c = cs.find(function (x) { return x.categorie === 'AD' && S.cle(x.site) === sansPrefixe; });
       if (c) return c;
     }
     if (k.length >= 4) {
-      var candidats = cs.filter(function (x) { return S.cle(x.nom).indexOf(k) >= 0; });
+      var candidats = cs.filter(function (x) { return S.cle(x.nom).indexOf(k) >= 0 || S.cle(x.sigle + x.site).indexOf(k) >= 0; });
       if (candidats.length === 1) return candidats[0];
     }
     return null;
   }
 
   function ajouteCentre(c) {
-    var n = Object.assign({ id: id(), code: '', nom: '', type: 'autre', dep: '', url: '', entraide: '', adresse: '', horaires: '', lecteur: '', notes: '' }, c);
-    if (!n.code) n.code = S.sansAccents(n.nom).toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 20) || 'CENTRE';
+    var n = Object.assign({ id: id(), code: '', nom: '', categorie: 'AUTRE', sigle: '', groupe: '', site: '', detail: '', dep: '', url: '', entraide: '', adresse: '', horaires: '', lecteur: '', notes: '' }, c);
+    if (!n.groupe) n.groupe = n.nom;
+    if (!n.sigle) n.sigle = n.code || n.groupe;
+    if (!n.nom) n.nom = root.GA_INIT.nomComplet(n);
+    if (!n.code) n.code = S.sansAccents(n.sigle + (n.site ? '-' + n.site : '')).toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 24) || 'CENTRE';
     etat.data.centres.push(n);
     modifie();
     return n;
@@ -421,7 +463,7 @@
       notaire: acte.notaire || '', ville: acte.ville || '', cote: acte.cote || '',
       statut: S.STATUTS[acte.statut] ? acte.statut : 'chercher',
       description: acte.description || '', notes: acte.notes || '', transcription: acte.transcription || '',
-      tags: acte.tags || [], historique: [{ le: t, statut: S.STATUTS[acte.statut] ? acte.statut : 'chercher' }],
+      tags: acte.tags || [], champs: Object.assign({}, acte.champs || {}), historique: [{ le: t, statut: S.STATUTS[acte.statut] ? acte.statut : 'chercher' }],
       cree: t, modifie: t
     };
   }
@@ -493,6 +535,36 @@
     modifie();
   }
 
+  // ------------------------------------------------------------ balises personnalisées
+
+  /* Balises personnalisées : celles déclarées dans « Ma base » + celles déjà utilisées dans des documents. */
+  function balisesPerso() {
+    var vues = {}, liste = [];
+    etat.data.balises.forEach(function (b) { vues[b.nom] = 1; liste.push(b); });
+    etat.data.documents.forEach(function (d) {
+      Object.keys(d.champs || {}).forEach(function (k) {
+        if (!vues[k]) { vues[k] = 1; liste.push({ nom: k, libelle: k, description: '' }); }
+      });
+    });
+    return liste.sort(function (a, b) { return a.nom.localeCompare(b.nom, 'fr'); });
+  }
+
+  function declareBalise(b) {
+    var nom = S.nomBalise(b.nom);
+    if (!nom) throw new Error('Nom de balise vide.');
+    if (S.champ(nom)) throw new Error('@' + nom + ' existe déjà parmi les balises de base.');
+    var ex = etat.data.balises.find(function (x) { return x.nom === nom; });
+    if (ex) { ex.libelle = b.libelle || ex.libelle; ex.description = b.description != null ? b.description : ex.description; }
+    else etat.data.balises.push({ nom: nom, libelle: b.libelle || nom, description: b.description || '' });
+    modifie();
+    return nom;
+  }
+
+  function supprimeBalise(nom) {
+    etat.data.balises = etat.data.balises.filter(function (b) { return b.nom !== nom; });
+    modifie();
+  }
+
   // ------------------------------------------------------------ export / import complet
 
   function telecharge(nom, contenu, type) {
@@ -510,13 +582,14 @@
   }
 
   function exporteCSV() {
-    var cols = ['centre', 'date', 'type', 'personnes', 'notaire', 'ville', 'cote', 'statut', 'description', 'notes', 'tags'];
+    var perso = balisesPerso().map(function (b) { return b.nom; });
+    var cols = ['centre', 'date', 'type', 'personnes', 'notaire', 'ville', 'cote', 'statut', 'description', 'notes', 'tags'].concat(perso);
     var q = function (v) { v = String(v == null ? '' : v); return /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
     var lignes = [cols.join(';')];
     etat.data.documents.slice().sort(function (a, b) { return cleTri(a).localeCompare(cleTri(b)); }).forEach(function (d) {
       var c = centreParId(d.centreId);
       lignes.push([c ? c.code : '', S.formatDate(d), d.type, d.personnes.map(S.formatPersonne).join(' & '), d.notaire, d.ville,
-        d.cote, S.STATUTS[d.statut].libelle, d.description, d.notes, d.tags.join(', ')].map(q).join(';'));
+        d.cote, S.STATUTS[d.statut].libelle, d.description, d.notes, d.tags.join(', ')].concat(perso.map(function (k) { return d.champs[k] || ''; })).map(q).join(';'));
     });
     telecharge('geneaddict-documents-' + aujourdhui() + '.csv', '﻿' + lignes.join('\r\n'), 'text/csv');
   }
@@ -544,6 +617,7 @@
     majDocuments: majDocuments, supprimeDocuments: supprimeDocuments, estDoublon: estDoublon, cleTri: cleTri,
     ajouteDepouillement: ajouteDepouillement, majDepouillement: majDepouillement, supprimeDepouillement: supprimeDepouillement,
     ajouteLien: ajouteLien, majLien: majLien, supprimeLien: supprimeLien,
+    balisesPerso: balisesPerso, declareBalise: declareBalise, supprimeBalise: supprimeBalise,
     exporteJSON: exporteJSON, exporteCSV: exporteCSV, remplaceBase: remplaceBase, nouvelleBase: nouvelleBase,
     telecharge: telecharge, aujourdhui: aujourdhui
   };

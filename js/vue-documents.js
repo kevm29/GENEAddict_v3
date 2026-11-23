@@ -11,14 +11,15 @@
     notaire: { lib: 'Notaire', f: function (d) { return S.cle(d.notaire) || 'zzzz'; } },
     cote: { lib: 'Cote', f: function (d) { return S.cle(d.cote) || 'zzzz'; } },
     type: { lib: 'Type', f: function (d) { return S.cle(d.type) || 'zzzz'; } },
-    centre: { lib: 'Centre', f: function (d) { var c = D.centreParId(d.centreId); return c ? (c.type === 'AD' ? '1' + c.dep : '0' + c.code) : 'zzzz'; } },
+    centre: { lib: 'Centre', f: function (d) { var c = D.centreParId(d.centreId); return c ? (c.categorie === 'AD' ? '1' + c.dep : '0' + U.libelleCentre(c, true)) : 'zzzz'; } },
     modifie: { lib: 'Modifié récemment', f: function (d) { return d.modifie; }, inverse: true }
   };
 
   function texteRecherche(d) {
     var c = D.centreParId(d.centreId);
     return S.cle([d.type, d.notaire, d.ville, d.cote, d.description, d.notes, d.transcription, d.tags.join(' '), d.dateTexte,
-      S.formatDate(d), c ? c.code + ' ' + c.nom : ''].concat(d.personnes.map(S.formatPersonne)).join(' '));
+      S.formatDate(d), c ? c.code + ' ' + c.nom + ' ' + U.libelleCentre(c, true) : ''].concat(d.personnes.map(S.formatPersonne))
+      .concat(Object.keys(d.champs || {}).map(function (k) { return k + ' ' + d.champs[k]; })).join(' '));
   }
 
   /* Filtre commun (liste, fiche de consultation, accueil). */
@@ -209,6 +210,16 @@
       return '<li>' + esc(U.dateCourte(h.le)) + ' — ' + U.pastilleStatut(h.statut) + '</li>';
     }).join('');
     var entraide = nouveau ? '' : lienEntraide(d);
+    var connues = D.balisesPerso();
+    var libelles = {};
+    connues.forEach(function (b) { libelles[b.nom] = b; });
+    var aMontrer = Object.keys(d.champs || {});
+    D.etat.data.balises.forEach(function (b) { if (aMontrer.indexOf(b.nom) < 0) aMontrer.push(b.nom); });
+    function ligneChamp(k, v) {
+      var b = libelles[k] || {};
+      return '<label class="champ-perso">@' + esc(k) + (b.description ? ' <small>' + esc(b.description) + '</small>' : '') +
+        '<textarea rows="1" data-champ="' + esc(k) + '">' + esc(v || '') + '</textarea></label>';
+    }
 
     var m = U.ouvreModale(nouveau ? 'Nouveau document' : 'Document', '<form class="form-doc">' +
       '<div class="grille">' +
@@ -225,6 +236,12 @@
       '<label class="large">Description<input name="description" value="' + esc(d.description) + '"></label>' +
       '<label class="large">Annotations<textarea name="notes" rows="5" placeholder="Vos notes de lecture, pistes, renvois…">' + esc(d.notes) + '</textarea></label>' +
       '<details class="large"' + (d.transcription ? ' open' : '') + '><summary>Transcription</summary><textarea name="transcription" rows="8">' + esc(d.transcription) + '</textarea></details>' +
+      '<fieldset class="large champs-perso"><legend>Champs personnalisés</legend><div class="liste-champs">' +
+        aMontrer.map(function (k) { return ligneChamp(k, d.champs[k]); }).join('') + '</div>' +
+        '<div class="ajout-champ"><input list="liste-balises-perso" placeholder="Nouveau champ : parrain, source, vue…" data-nouveau-champ>' +
+        '<button type="button" class="btn petit" data-ajout-champ>+ Ajouter</button></div>' +
+        '<datalist id="liste-balises-perso">' + connues.map(function (b) { return '<option value="' + esc(b.nom) + '">' + esc(b.description || '') + '</option>'; }).join('') + '</datalist>' +
+      '</fieldset>' +
       '</div>' +
       '<datalist id="liste-types">' + types.map(function (t) { return '<option value="' + esc(t) + '">'; }).join('') + '</datalist>' +
       (historique && !nouveau ? '<details class="historique"><summary>Historique du statut</summary><ul>' + historique + '</ul></details>' : '') +
@@ -251,16 +268,39 @@
         type: f.type.value.trim(), personnes: S.lirePersonnes(f.personnes.value),
         notaire: f.notaire.value.trim().replace(/^(me|maître|maitre)\.?\s+/i, ''), ville: f.ville.value.trim(), cote: f.cote.value.trim(),
         tags: f.tags.value.split(/\s*[,;]\s*/).filter(Boolean),
-        description: f.description.value.trim(), notes: f.notes.value, transcription: f.transcription.value
+        description: f.description.value.trim(), notes: f.notes.value, transcription: f.transcription.value,
+        champs: champsSaisis()
       };
     }
+
+    function champsSaisis() {
+      var r = {};
+      U.$$('[data-champ]', form).forEach(function (t) { if (t.value.trim()) r[t.dataset.champ] = t.value.trim(); });
+      return r;
+    }
+    function ajouteChamp() {
+      var inp = U.$('[data-nouveau-champ]', form);
+      var k = S.nomBalise(inp.value);
+      if (!k) return;
+      if (S.champ(k)) { U.toast('@' + k + ' est une balise de base : utilisez le champ correspondant.', 'erreur'); return; }
+      var exist = U.$('[data-champ="' + k + '"]', form);
+      if (!exist) {
+        U.$('.liste-champs', form).insertAdjacentHTML('beforeend', ligneChamp(k, ''));
+        exist = U.$('[data-champ="' + k + '"]', form);
+      }
+      inp.value = '';
+      exist.focus();
+    }
+    U.$('[data-ajout-champ]', form).addEventListener('click', ajouteChamp);
+    U.$('[data-nouveau-champ]', form).addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); ajouteChamp(); }
+    });
 
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       var v = lit();
       if (nouveau) {
         var n = D.nouveauDocument(v, v.centreId);
-        n.notes = v.notes; n.transcription = v.transcription; n.dateTexte = v.dateTexte;
         D.ajouteDocuments([n]);
         U.toast('Document ajouté.', 'ok');
       } else {

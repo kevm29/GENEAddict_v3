@@ -199,12 +199,37 @@
     return INDEX_CHAMPS[cle(nom)] || null;
   }
 
+  /* Nom normalisé d'une balise personnalisée : « Lieu d'inhumation » → « lieu-d-inhumation ». */
+  function nomBalise(s) {
+    return sansAccents(s).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+  }
+
+  /* Liste des balises de base, pour l'aide et l'autocomplétion. */
+  var BALISES = [
+    ['centre', 'Centre d\'archives : CARAN, 35, AD35, SHD Caen…'],
+    ['date', '02/06/1642 · ??/06/1642 · 1642 · vers 1650'],
+    ['type', 'Type d\'acte : Procuration, CM, IAD…'],
+    ['personne', 'Prénom NOM (plusieurs : séparer par &)'],
+    ['notaire', 'Nom du notaire'],
+    ['ville', 'Ville, lieu, paroisse'],
+    ['cote', 'Cote du document'],
+    ['statut', 'à chercher · demandé · obtenu · perdu'],
+    ['description', 'Résumé court'],
+    ['note', 'Annotations (les lignes suivantes s\'y ajoutent)'],
+    ['transcription', 'Texte de l\'acte'],
+    ['tags', 'Étiquettes, séparées par des virgules'],
+    ['nom', 'Nom seul (avec @prenom)'],
+    ['prenom', 'Prénom seul (avec @nom)'],
+    ['jour', 'Jour seul'], ['mois', 'Mois seul'], ['annee', 'Année seule'],
+    ['par-defaut', 'Début d\'un bloc de valeurs communes aux actes suivants']
+  ];
+
   var MULTILIGNES = { notes: 1, transcription: 1, description: 1 };
 
   function acteVide() {
     return {
       centre: '', jour: '', mois: '', annee: '', dateTexte: '', type: '', personnes: [],
-      notaire: '', ville: '', cote: '', statut: '', description: '', notes: '', transcription: '', tags: [],
+      notaire: '', ville: '', cote: '', statut: '', description: '', notes: '', transcription: '', tags: [], champs: {},
       _ligne: 0, _erreurs: [], _avertissements: []
     };
   }
@@ -213,6 +238,11 @@
   function affecte(acte, ch, valeur, tmp) {
     var v = String(valeur == null ? '' : valeur).trim();
     if (!v && ch !== 'notes') return;
+    if (ch.indexOf('perso:') === 0) {
+      var k = ch.slice(6);
+      acte.champs[k] = acte.champs[k] ? acte.champs[k] + '\n' + v : v;
+      return;
+    }
     switch (ch) {
       case 'date': {
         var d = lireDate(v);
@@ -295,8 +325,8 @@
         var n = l[0], txt = l[1];
         var m = RE_BALISE.exec(txt), ch = null, val;
         if (m) {
-          ch = champ(m[1]); val = m[2];
-          if (!ch) { acte._avertissements.push('Ligne ' + n + ' : balise @' + m[1] + ' inconnue, ignorée.'); dernier = null; return; }
+          ch = champ(m[1]) || (nomBalise(m[1]) ? 'perso:' + nomBalise(m[1]) : null); val = m[2];
+          if (!ch) { dernier = null; return; }
         } else if ((m = RE_ETIQUETTE.exec(txt)) && champ(m[1])) {
           ch = champ(m[1]); val = m[2];
         }
@@ -304,6 +334,8 @@
           if (source) source[ch] = (source[ch] ? source[ch] + '\n' : '') + val;
           else affecte(acte, ch, val, tmp);
           dernier = ch;
+        } else if (dernier && dernier.indexOf('perso:') === 0 && !source) {
+          affecte(acte, dernier, txt, tmp); // ligne de suite d'une balise personnalisée
         } else if (dernier && MULTILIGNES[dernier] && !source) {
           acte[dernier] = acte[dernier] ? acte[dernier] + '\n' + txt : txt; // ligne de suite
         } else if (dernier === 'personnes' && !source) {
@@ -315,7 +347,8 @@
       if (source) { defauts = source; return; }
       // valeurs par défaut pour les champs absents
       Object.keys(defauts).forEach(function (ch) {
-        var vide = ch === 'personnes' || ch === 'tags' ? !acte[ch].length
+        var vide = ch.indexOf('perso:') === 0 ? !acte.champs[ch.slice(6)]
+          : ch === 'personnes' || ch === 'tags' ? !acte[ch].length
           : (ch === 'date' ? !acte.annee && !acte.dateTexte : ch in acte ? !acte[ch] : !tmp[ch]);
         if (vide) affecte(acte, ch, defauts[ch], tmp);
       });
@@ -389,8 +422,11 @@
     if (reconnues >= 2 || (reconnues >= 1 && titres.length === 1)) {
       colonnes = entete;
       lignes = lignes.slice(1);
-      var inconnues = titres.filter(function (t, i) { return !entete[i] && t.trim(); });
-      if (inconnues.length) erreurs.push('Colonnes ignorées : ' + inconnues.map(function (t) { return t.trim(); }).join(', ') + '.');
+      var perso = [];
+      titres.forEach(function (t, i) {
+        if (!entete[i] && nomBalise(t)) { entete[i] = 'perso:' + nomBalise(t); perso.push('@' + nomBalise(t)); }
+      });
+      if (perso.length) erreurs.push('Colonnes gardées comme champs personnalisés : ' + perso.join(', ') + '.');
     } else {
       colonnes = ORDRE_PAR_DEFAUT.slice();
       erreurs.push("Pas de ligne d'en-tête reconnue : colonnes lues dans l'ordre date, type, personnes, notaire, cote, description.");
@@ -428,7 +464,8 @@
   var api = {
     lire: lire, lireBalises: lireBalises, lireTableau: lireTableau, detecteFormat: detecteFormat,
     lireDate: lireDate, formatDate: formatDate, lirePersonne: lirePersonne, lirePersonnes: lirePersonnes,
-    formatPersonne: formatPersonne, lireStatut: lireStatut, STATUTS: STATUTS, sansAccents: sansAccents, cle: cle
+    formatPersonne: formatPersonne, lireStatut: lireStatut, STATUTS: STATUTS, sansAccents: sansAccents, cle: cle,
+    champ: champ, nomBalise: nomBalise, BALISES: BALISES
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.GA_SAISIE = api;

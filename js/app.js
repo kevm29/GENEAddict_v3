@@ -49,8 +49,10 @@
     var vue = V[r.vue] || V.accueil;
     U.fermeModale();
     menu();
-    var racine = U.$('#vue');
-    racine.innerHTML = '';
+    // zone neuve à chaque affichage : les écouteurs de l'écran précédent disparaissent avec l'ancienne
+    var ancienne = U.$('#vue');
+    var racine = ancienne.cloneNode(false);
+    ancienne.parentNode.replaceChild(racine, ancienne);
     racine.className = 'vue vue-' + r.vue;
     document.title = (vue.titre ? vue.titre + ' · ' : '') + 'GENEAddict';
     try {

@@ -101,6 +101,7 @@ input[type=checkbox] { accent-color: var(--vert); width: 16px; height: 16px; }
 .stats, .stats-centre { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
 .stat { display: flex; flex-direction: column; background: var(--panneau); border-radius: var(--rayon); padding: 14px 18px; border-top: 4px solid currentColor; text-decoration: none !important; box-shadow: var(--ombre); }
 .stat b { font-size: 2rem; line-height: 1.1; }
+.stats-centre { grid-template-columns: repeat(2, 1fr); }
 .stats-centre .stat { background: var(--fond-profond); box-shadow: none; padding: 10px 14px; }
 .stats-centre .stat b { font-size: 1.5rem; }
 
@@ -167,6 +168,21 @@ input[type=checkbox] { accent-color: var(--vert); width: 16px; height: 16px; }
 .grille input, .grille select, .grille textarea { color: var(--texte); }
 details summary { cursor: pointer; color: var(--discret); }
 .historique { margin-top: 12px; }
+.champs-perso { border: 1px solid var(--bord); border-radius: 8px; padding: 8px 12px 12px; color: var(--discret); }
+.champs-perso legend { padding: 0 6px; font-size: .9rem; }
+.liste-champs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+.champ-perso { display: flex; flex-direction: column; gap: 3px; font-family: var(--mono); font-size: .85rem; color: var(--vert); }
+.champ-perso small { font-family: var(--police); color: var(--discret); }
+.champ-perso textarea { font-family: var(--police); font-size: .95rem; }
+.ajout-champ { display: flex; gap: 8px; margin-top: 8px; }
+.ajout-champ input { flex: 1; }
+.table-balises { width: 100%; border-collapse: collapse; margin: 8px 0 12px; }
+.table-balises th { text-align: left; color: var(--discret); font-weight: 500; font-size: .85rem; padding: 4px 6px; }
+.table-balises td { padding: 4px 6px; border-top: 1px solid var(--bord); }
+.table-balises td.mono { color: var(--vert); }
+.table-balises input { width: 100%; }
+.ajout-balise { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ajout-balise input[name=description] { flex: 1; min-width: 200px; }
 .historique ul { margin: 6px 0; padding-left: 18px; }
 
 /* ------------------------------------------------ saisie rapide */
@@ -188,6 +204,15 @@ details summary { cursor: pointer; color: var(--discret); }
 .messages { margin: 4px 0 0; padding-left: 18px; font-size: .84rem; color: var(--ambre); }
 .messages .err { color: var(--rouge); }
 .messages .dbl { color: var(--bleu); }
+.messages .info { color: var(--vert); }
+.apercu-ligne2 .perso { color: var(--vert); font-family: var(--mono); font-size: .9em; }
+.zone-texte-cadre { position: relative; }
+.suggestions { position: absolute; z-index: 20; margin: 0; padding: 4px; list-style: none; min-width: 260px; max-width: 460px; background: var(--fond-profond); border: 1px solid var(--bleu); border-radius: 8px; box-shadow: var(--ombre); font-size: .88rem; }
+.suggestions li { display: flex; gap: 10px; align-items: baseline; padding: 4px 8px; border-radius: 5px; cursor: pointer; }
+.suggestions li.actif { background: var(--panneau-clair); }
+.suggestions .sugg-texte { font-family: var(--mono); white-space: nowrap; }
+.suggestions li.perso .sugg-texte { color: var(--vert); }
+.suggestions .sugg-desc { color: var(--discret); font-size: .85em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .aide { margin-top: 16px; }
 .aide summary { font-weight: 600; color: var(--texte); }
 .aide-colonnes { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 12px; }
@@ -196,21 +221,48 @@ details summary { cursor: pointer; color: var(--discret); }
 .a-importer .fichiers { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; border: 1px solid var(--vert); }
 
 /* ------------------------------------------------ archives */
-.archives-grille { display: grid; grid-template-columns: minmax(320px, 1.1fr) minmax(320px, 1fr); gap: 16px; align-items: start; }
+.archives-grille { display: grid; grid-template-columns: minmax(340px, 1.35fr) minmax(320px, 1fr); gap: 16px; align-items: start; }
 .carte-zone { position: sticky; top: 76px; }
-.carte-france { width: 100%; height: auto; display: block; }
-.carte-france .dep { fill: #1b6378; stroke: var(--fond); stroke-width: .8; cursor: pointer; transition: fill .15s; }
-.carte-france .dep.niv1 { fill: #2b7f8e; }
-.carte-france .dep.niv2 { fill: #3a9a9d; }
-.carte-france .dep.niv3 { fill: #4fb59a; }
-.carte-france .dep.niv4 { fill: var(--vert); }
-.carte-france .dep.a-chercher { stroke: var(--ambre); stroke-width: 1.6; }
-.carte-france .dep:hover { fill: var(--bleu); }
-.carte-france .dep.choisi { fill: var(--bleu); stroke: var(--texte); stroke-width: 2; }
-.legende { color: var(--discret); font-size: .82rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 8px 0 0; }
-.leg { display: inline-block; width: 14px; height: 14px; border-radius: 3px; background: #1b6378; margin-left: 8px; }
+.carte-boite { position: relative; }
+.carte-france { width: 100%; height: auto; display: block; cursor: grab; touch-action: none; user-select: none; }
+.carte-france.glisse { cursor: grabbing; }
+.dep { fill: #1b6378; stroke: var(--fond); stroke-width: .7; vector-effect: non-scaling-stroke; cursor: pointer; transition: fill .15s; }
+.dep.niv1 { fill: #2b7f8e; }
+.dep.niv2 { fill: #3a9a9d; }
+.dep.niv3 { fill: #4fb59a; }
+.dep.niv4 { fill: #5cbf6a; }
+.dep:hover { fill: var(--bleu); }
+/* liseré découpé par la forme du département : la moitié extérieure du trait est masquée */
+.lisere { fill: none; pointer-events: none; vector-effect: non-scaling-stroke; }
+.lisere.a-chercher { stroke: var(--ambre); stroke-width: 3; }
+.lisere.choisi { stroke: var(--texte); stroke-width: 5; }
+.carte-france .lisere.choisi ~ .lisere, .dep[data-centre=""] { cursor: default; }
+.etiq { pointer-events: none; }
+.etiq text { text-anchor: middle; fill: #fffefb; paint-order: stroke; stroke: rgba(8, 35, 46, .85); stroke-width: .35px; stroke-linejoin: round; font-family: var(--police); }
+.etiq-num { font-weight: 700; }
+.etiq-nom { font-weight: 500; opacity: .92; }
+.encart-idf { position: absolute; left: 6px; top: 6px; width: 23%; min-width: 120px; background: rgba(14, 36, 49, .85); border: 1px solid var(--bord); border-radius: 8px; padding: 4px; }
+.encart-idf svg { display: block; width: 100%; height: auto; }
+.encart-idf span { display: block; text-align: center; font-size: .72rem; color: var(--discret); }
+.zoom { position: absolute; right: 6px; top: 6px; display: flex; flex-direction: column; gap: 4px; }
+.zoom .btn-icone { background: rgba(14, 36, 49, .85); border: 1px solid var(--bord); width: 32px; height: 32px; font-size: 1.1rem; color: var(--texte); }
+.legende { color: var(--discret); font-size: .82rem; display: flex; align-items: center; gap: 6px 16px; flex-wrap: wrap; margin: 8px 0 0; }
+.legende > span { display: inline-flex; align-items: center; gap: 5px; }
+.leg { display: inline-block; width: 14px; height: 14px; border-radius: 3px; background: #1b6378; }
 .leg.niv2 { background: #3a9a9d; }
 .leg.a-chercher { background: transparent; border: 2px solid var(--ambre); }
+.onglets { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--bord); margin: -4px 0 12px; padding-bottom: 8px; }
+.onglet { background: none; border: 1px solid transparent; color: var(--discret); font: inherit; font-size: .88rem; padding: 4px 10px; border-radius: 16px; cursor: pointer; }
+.onglet:hover { color: var(--texte); background: rgba(255, 255, 255, .05); }
+.onglet.actif { color: #04222e; background: var(--bleu); font-weight: 600; }
+.onglet .nb { opacity: .7; font-size: .8em; }
+.groupe { padding: 8px 0; border-bottom: 1px solid var(--bord); }
+.groupe:last-child { border-bottom: 0; }
+.groupe-titre { display: flex; align-items: center; gap: 6px; }
+.groupe-titre .btn-icone { font-size: .95rem; padding: 0 6px; opacity: .6; }
+.groupe-titre .btn-icone:hover { opacity: 1; }
+.puces.sous { margin: 6px 0 0 14px; }
+.sous-titre { margin: -6px 0 10px; color: var(--discret); }
 .puces { display: flex; flex-wrap: wrap; gap: 6px; }
 .puce-centre { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 14px; background: var(--fond-profond); color: var(--texte); font-size: .88rem; text-decoration: none !important; }
 .puce-centre:hover, .puce-centre.actif { background: var(--bleu); color: #04222e; }
@@ -270,7 +322,7 @@ details summary { cursor: pointer; color: var(--discret); }
   .menu a.actif { border-bottom-color: var(--vert); }
   .vue { padding: 16px; }
   .stats, .stats-centre { grid-template-columns: 1fr 1fr; }
-  .grille { grid-template-columns: 1fr; }
+  .grille, .liste-champs { grid-template-columns: 1fr; }
   .entete { gap: 10px; }
   #recherche-globale { display: none; }
   .logo { font-size: 1.5rem; }

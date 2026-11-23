@@ -80,7 +80,8 @@ Statut : obtenu
   assert.equal(b.cote, 'ET/XXXIII/54');
   assert.equal(c.centre, 'AD35');
   assert.equal(c.personnes.length, 2);
-  assert.equal(c._avertissements.length, 1);
+  assert.equal(c._avertissements.length, 0);
+  assert.deepEqual(c.champs, { bidule: 'truc' });
   assert.equal(c._erreurs.length, 0);
 });
 
@@ -134,4 +135,35 @@ test('affichage des dates partielles', () => {
   assert.equal(S.formatDate({ jour: '', mois: '06', annee: '1642' }), '??/06/1642');
   assert.equal(S.formatDate({ jour: '', mois: '', annee: '1712' }), '1712');
   assert.equal(S.formatDate({ dateTexte: 'vers 1650', annee: '1650' }), 'vers 1650');
+});
+
+test('balises personnalisées', () => {
+  const r = S.lire(`@par-defaut
+@Inhumation Rennes
+
+@date 1700
+@type Sépulture
+@personne Jean MURET
+@Témoins Pierre LE GALL
+@parrain Yves KERBRAT
+@source Registre BMS, vue 12
+suite de la source
+
+@date 1701
+@type Baptême
+@lieu-d-inhumation Brest`);
+  // « @Inhumation Rennes » : le nom de balise s'arrête à la première espace
+  const [a, b] = r.actes;
+  assert.equal(a.personnes.length, 2);           // @témoins est un alias de @personne
+  assert.equal(a.champs.parrain, 'Yves KERBRAT');
+  assert.equal(a.champs.source, 'Registre BMS, vue 12\nsuite de la source');
+  assert.equal(a.champs.inhumation, 'Rennes');          // valeur par défaut, nom normalisé
+  assert.equal(b.champs.inhumation, 'Rennes');
+  assert.equal(b.champs['lieu-d-inhumation'], 'Brest');
+  assert.equal(S.nomBalise("Lieu d'inhumation"), 'lieu-d-inhumation');
+});
+
+test('colonnes inconnues gardées en champs personnalisés', () => {
+  const r = S.lire('date;cote;Parrain;vue\n1700;3E 12;Yves KERBRAT;12');
+  assert.deepEqual(r.actes[0].champs, { parrain: 'Yves KERBRAT', vue: '12' });
 });

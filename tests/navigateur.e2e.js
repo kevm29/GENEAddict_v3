@@ -131,7 +131,7 @@ fs.mkdirSync(OUT, { recursive: true });
   await shot('07-archives-caran');
   const ad35 = await page.evaluate(() => window.GA_DONNEES.trouveCentre('35').id);
   await page.click('path.dep[data-centre="' + ad35 + '"]');
-  const vu35 = await page.waitForFunction(() => (document.querySelector('.fiche-centre h2') || {}).textContent.includes('Ille-et-Vilaine'), null, { timeout: 5000 }).then(() => true, () => false);
+  const vu35 = await page.waitForFunction(() => (document.querySelector('.fiche-centre') || { textContent: '' }).textContent.includes('Ille-et-Vilaine'), null, { timeout: 5000 }).then(() => true, () => false);
   ok(vu35, 'clic sur la carte → AD 35');
   await shot('08-archives-ad35');
 
@@ -199,6 +199,84 @@ fs.mkdirSync(OUT, { recursive: true });
   });
   await page.evaluate(() => window.GA_DONNEES.verifieFichierExterne());
   ok(await page.evaluate(() => window.GA_DONNEES.etat.data.liens.some((l) => l.nom === 'Ajout externe')), 'modification extérieure du fichier rechargée');
+
+  // ---- Carte : étiquettes, liseré découpé, zoom, onglets
+  await page.goto(APP + '#/archives/' + ad35);
+  await page.waitForSelector('.lisere.choisi');
+  const etiq = await page.evaluate(() => ({
+    nums: [...document.querySelectorAll('.carte-france .etiq')].filter((g) => g.style.display !== 'none').length,
+    noms: [...document.querySelectorAll('.carte-france .etiq-nom')].filter((t) => t.style.display !== 'none' && t.parentNode.style.display !== 'none').length,
+    clip: document.querySelector('.lisere.choisi').getAttribute('clip-path'),
+  }));
+  ok(etiq.nums > 80 && etiq.noms > 20 && /url\(#cp-35\)/.test(etiq.clip), 'carte : ' + etiq.nums + ' numéros, ' + etiq.noms + ' noms, liseré ' + etiq.clip);
+  await shot('15-carte-etiquettes');
+  await page.click('[data-z="1.5"]'); await page.click('[data-z="1.5"]');
+  const nomsZoom = await page.evaluate(() => [...document.querySelectorAll('.carte-france .etiq-nom')].filter((t) => t.style.display !== 'none' && t.parentNode.style.display !== 'none').length);
+  ok(nomsZoom > 0, 'zoom : ' + nomsZoom + ' noms visibles dans la vue zoomée');
+  await shot('16-carte-zoom');
+  await page.click('[data-z="0"]');
+  await page.click('[data-onglet="SHD"]');
+  await page.waitForSelector('.onglet.actif[data-onglet="SHD"]');
+  const sitesShd = await page.$$eval('.catalogue .puces.sous .puce-centre', (l) => l.map((x) => x.textContent.trim()));
+  ok(sitesShd.some((t) => t.startsWith('Caen')) && sitesShd.some((t) => t.startsWith('Le Blanc')) && sitesShd.length === 10, 'onglet SHD : ' + sitesShd.join(', '));
+  await page.click('[data-onglet="AN"]');
+  await page.waitForSelector('.onglet.actif[data-onglet="AN"]');
+  ok((await page.textContent('.catalogue')).includes('AN (Archives nationales)'), 'onglet AN : groupe « AN (Archives nationales) »');
+  await shot('17-onglet-an');
+  await page.click('.catalogue .puce-centre:has-text("Pierrefitte")');
+  ok(await page.waitForFunction(() => (document.querySelector('.fiche-centre .sous-titre') || { textContent: '' }).textContent.includes('Pierrefitte'), null, { timeout: 5000 }).then(() => true, () => false), 'fiche AN Pierrefitte');
+
+  // ---- Saisie : autocomplétion et balise personnalisée
+  await page.goto(APP + '#/saisie');
+  await page.waitForSelector('.zone-texte');
+  await page.click('[data-vider]');
+  await page.click('.zone-texte');
+  await page.keyboard.type('@');
+  await page.waitForSelector('.suggestions:not([hidden]) li');
+  await shot('18-autocompletion-balises');
+  await page.keyboard.type('cen');
+  ok((await page.textContent('.suggestions li.actif .sugg-texte')) === '@centre', 'suggestion @centre');
+  await page.keyboard.press('Enter');
+  await page.waitForSelector('.suggestions:not([hidden]) li');
+  await page.keyboard.type('SHD-CA');
+  await page.waitForTimeout(100);
+  await shot('19-autocompletion-centres');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('@date 1944\n@type Dossier de déporté\n@personne Jean MURET\n@cote AC 21 P 12345\n@parrain Yves KERBRAT\n');
+  await page.keyboard.press('Escape');
+  const texteSaisi = await page.inputValue('.zone-texte');
+  ok(texteSaisi.startsWith('@centre SHD-CAEN\n@date 1944'), 'autocomplétion insérée : ' + JSON.stringify(texteSaisi.slice(0, 30)));
+  await page.waitForTimeout(400);
+  ok((await page.textContent('.apercu-liste')).includes('Nouvelle balise @parrain'), 'aperçu : nouvelle balise signalée');
+  await shot('20-saisie-balise-perso');
+  await page.click('[data-ajouter]');
+  await page.waitForTimeout(300);
+  await page.goto(APP + '#/documents?q=kerbrat%20yves');
+  await page.waitForSelector('.table-docs tbody tr');
+  await page.click('.table-docs tbody tr:has-text("Dossier de déporté") td.col-pers');
+  await page.waitForSelector('.modale [data-champ="parrain"]');
+  ok((await page.inputValue('.modale [data-champ="parrain"]')) === 'Yves KERBRAT', 'champ personnalisé dans la fiche du document');
+  await shot('21-fiche-champ-perso');
+  await page.keyboard.press('Escape');
+  await page.goto(APP + '#/donnees');
+  await page.waitForSelector('.table-balises');
+  ok((await page.textContent('.table-balises')).includes('@parrain'), 'Ma base : @parrain listée');
+  await page.fill('.ajout-balise [name=nom]', 'Lieu inhumation');
+  await page.fill('.ajout-balise [name=description]', 'Cimetière, paroisse');
+  await page.click('.ajout-balise button');
+  await page.waitForSelector('tr[data-nom="lieu-inhumation"]');
+  ok(true, 'balise @lieu-inhumation déclarée');
+  await shot('22-ma-base-balises');
+
+  // ---- Migration d'une base de la première version
+  await page.evaluate(() => GA_DONNEES.remplaceBase(JSON.stringify({ app: 'GENEAddict', version: 1, documents: [{ id: 'd1', centreId: 'c1', type: 'IAD', statut: 'chercher' }],
+    centres: [{ id: 'c1', code: 'CARAN', nom: 'Archives nationales (CARAN, Paris)', type: 'national', dep: '', url: 'https://perso.example/' },
+      { id: 'c2', code: 'AM-RENNES', nom: 'Archives municipales de Rennes', type: 'AM', dep: '' }], liens: [] })));
+  const mig = await page.evaluate(() => { const c = GA_DONNEES.trouveCentre('CARAN'), r = GA_DONNEES.trouveCentre('AM-RENNES');
+    return { c: [c.categorie, c.sigle, c.site, c.url, c.id], r: [r.categorie, r.sigle], caen: !!GA_DONNEES.trouveCentre('SHD Caen'), n: GA_DONNEES.etat.data.centres.length }; });
+  ok(mig.c.join('|') === 'AN|AN|Paris|https://perso.example/|c1' && mig.r.join('|') === 'AM|AM-RENNES' && mig.caen, 'migration v1 → v2 : ' + JSON.stringify(mig));
 
   // Mobile
   await page.setViewportSize({ width: 390, height: 844 });

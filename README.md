@@ -44,9 +44,9 @@ Astuce : ajoutez `index.html` à vos favoris ou créez un raccourci sur le burea
 | Écran | Rôle |
 |---|---|
 | **Accueil** | Compteurs par statut, centres où il reste des actes à chercher, dépouillements en cours, derniers documents modifiés. |
-| **Archives** | Carte cliquable des départements (couleur selon le nombre de documents, contour pour les actes à chercher) + centres nationaux (CARAN, ANOM, SHD, BNF, Arolsen, CICR, SNCF…). Fiche de chaque centre : site, entraide FranceGenWeb / FDA, adresse, horaires, n° de lecteur, notes. |
+| **Archives** | Carte des départements avec numéros et noms (zoom à la molette, déplacement à la souris, encart Paris & petite couronne), couleur selon le nombre de documents, liseré pour les actes à chercher. Les autres centres sont rangés par onglets — Archives nationales, Défense (SHD), municipales, bibliothèques, ministères, religieuses, étranger, privées — et regroupés par institution avec leurs sites (ex. *AN (Archives nationales)* → Paris, Pierrefitte-sur-Seine). Fiche de chaque centre : site, entraide FranceGenWeb / FDA, adresse, horaires, n° de lecteur, notes. |
 | **Documents** | Liste filtrable (texte libre, centre, type, période, statut), tri, changement de statut en un clic, sélection multiple, fiche détaillée avec annotations, transcription, étiquettes et historique des statuts. |
-| **Saisie rapide** | Ajout d'actes **sans formulaire** : texte à balises ou tableau copié depuis Excel, avec aperçu, contrôle des erreurs et détection des doublons. Voir [`docs/FORMAT_SAISIE.md`](docs/FORMAT_SAISIE.md). |
+| **Saisie rapide** | Ajout d'actes **sans formulaire** : texte à balises ou tableau copié depuis Excel, avec suggestions à la frappe après `@`, aperçu, contrôle des erreurs et détection des doublons. Les balises que vous inventez (`@parrain`, `@source`…) sont gardées comme champs personnalisés. Voir [`docs/FORMAT_SAISIE.md`](docs/FORMAT_SAISIE.md). |
 | **Fiche de consultation** | Feuille A4 à emporter aux archives : cotes à demander triées, cases à cocher, colonne de notes, rappel des dépouillements en cours, lignes vides. Au retour, on met à jour les statuts directement sur la fiche. |
 | **Dépouillements** | Suivi page à page de la lecture d'un registre, d'une étude notariale ou d'un fonds. |
 | **Liens** | Sites utiles, rangés par catégorie. |
@@ -91,7 +91,9 @@ css/impression.css        fiches imprimables (A4 paysage)
 js/saisie.js              lecture du texte à balises et des tableaux (testé sous Node)
 js/donnees.js             la base : fichier JSON, sauvegardes, dossier a-importer/, IndexedDB
 js/donnees-initiales.js   centres et liens proposés dans une base neuve
-js/carte-france.js        tracé des départements
+js/carte-france.js        tracé des départements et position des étiquettes
+js/carte.js               carte interactive (zoom, étiquettes, liseré, encart Paris)
+js/autocompletion.js      suggestions de la saisie rapide
 js/ui.js                  outils d'interface (fenêtres, notifications, routeur)
 js/vue-*.js               un fichier par écran
 js/app.js                 démarrage et menu
@@ -110,6 +112,7 @@ nécessite `npm install`).
 - Arbres : import GEDCOM et lien entre actes et individus.
 - Import des dépouillements de l'ancienne table `recherches`.
 - Saisie par balises des centres et des dépouillements.
+- Catégories de centres modifiables depuis l'interface.
 - Pièces jointes (photos d'actes) rangées dans le dossier de la base.
 
 ## Crédits
