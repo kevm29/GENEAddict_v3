@@ -336,6 +336,33 @@ fs.mkdirSync(OUT, { recursive: true });
   ok(rev.cachees === 0 && rev.texte.includes('1 E 206') && rev.texte.includes('Nicolas SIMON'), '2024 : question et annexe propres à la correction, « Tout révéler »');
   await shot('23-etude-correction');
 
+  // Réponses des participants envoyées à Supabase (serveur simulé)
+  const envois = [];
+  await page.route('https://test.supabase.co/**', async (route) => {
+    const r = route.request();
+    envois.push({ url: r.url(), headers: r.headers(), body: r.postDataJSON() });
+    await route.fulfill({ status: 201, body: '', headers: { 'access-control-allow-origin': '*' } });
+  });
+  await page.click('[data-fermer-annee]'); await page.waitForSelector('[name=mdp]');
+  await page.fill('[name=mdp]', '2024'); await page.click('.mdp-etudes button');
+  await page.waitForSelector('.couverture');
+  await page.goto(APP + '#/etudes/2024/tp2'); await page.waitForSelector('.saisie-reponse');
+  ok((await page.$$eval('.reponse', (l) => l.length)) === 0 && await page.$eval('[data-envoyer]', (b) => b.disabled),
+    'énoncés : zones de réponse vides, envoi désactivé tant que Supabase n\'est pas configuré');
+  await page.fill('.saisie-reponse[data-k="0"]', 'Réponse de test');
+  await page.evaluate(() => { GA_SUPABASE.url = 'https://test.supabase.co'; GA_SUPABASE.cle = 'sb_publishable_TEST'; });
+  await page.goto(APP + '#/etudes/2024/tp1'); await page.goto(APP + '#/etudes/2024/tp2');
+  await page.waitForSelector('[data-envoyer]:not([disabled])');
+  ok((await page.inputValue('.saisie-reponse[data-k="0"]')) === 'Réponse de test', 'brouillon de réponse conservé');
+  await page.fill('[data-participant]', 'Test');
+  await page.click('[data-envoyer]');
+  await page.waitForFunction(() => /Envoyé le/.test(document.querySelector('.etat-envoi').textContent));
+  const env = envois[0];
+  ok(env && env.url.endsWith('/rest/v1/reponses_etudes') && env.headers.apikey === 'sb_publishable_TEST' && !env.headers.authorization
+    && env.body.length === 1 && env.body[0].defi === 1 && env.body[0].tp === 'tp2' && env.body[0].participant === 'Test',
+    'envoi Supabase : une ligne par réponse remplie, clé publique dans « apikey »');
+  await shot('24-etude-reponses');
+
   // Mobile
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(APP + '#/accueil');

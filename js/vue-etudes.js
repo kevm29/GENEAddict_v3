@@ -148,7 +148,8 @@
     return '<ol class="defis">' + defis.map(function (d) {
       if (d.intertitre) return '<li class="intertitre">' + esc(d.intertitre) + '</li>';
       if (d.note) return '<li class="note-defi">' + d.note + '</li>';
-      var rep = c.solutions ? blocReponse(d, k++) : '';
+      var rep = c.solutions ? blocReponse(d, k++)
+        : '<textarea class="saisie-reponse" data-k="' + (k++) + '" rows="2" placeholder="Votre réponse…"></textarea>';
       return '<li class="' + (d.bonus ? 'defi bonus-defi' : 'defi') + '"><div>' + (d.bonus ? '<span class="bonus">Bonus</span> ' : '') + d.texte + '</div>' + rep + '</li>';
     }).join('') + '</ol>';
   }
@@ -158,6 +159,98 @@
       return '<figure class="' + (il.large ? 'large' : '') + '"><img src="' + img(annee, il.img) + '" alt="">' +
         (il.legende ? '<figcaption>' + il.legende + '</figcaption>' : '') + '</figure>';
     }).join('');
+  }
+
+  // ---------------------------------------------------------------- réponses des participants
+
+  var CLE_PARTICIPANT = 'ga-etudes-participant';
+
+  function stockage(cle, valeur) {
+    try {
+      if (valeur === undefined) return localStorage.getItem(cle) || '';
+      if (valeur) localStorage.setItem(cle, valeur); else localStorage.removeItem(cle);
+    } catch (e) { /* stockage indisponible : tant pis pour le brouillon */ }
+    return '';
+  }
+  function cleBrouillon(annee, e, k) { return 'ga-etudes-rep-' + annee + '-' + e.id + '-' + k; }
+
+  function envoiConfigure() {
+    var cfg = root.GA_SUPABASE || {};
+    return !!(U.urlSure(cfg.url) && cfg.cle);
+  }
+
+  function barreEnvoi(annee, e) {
+    var dernier = stockage('ga-etudes-envoi-' + annee + '-' + e.id);
+    return '<div class="barre-envoi">' +
+      '<label>Nom ou équipe <input type="text" data-participant maxlength="100" autocomplete="name" value="' + esc(stockage(CLE_PARTICIPANT)) + '"></label>' +
+      '<button type="button" class="btn principal" data-envoyer' + (envoiConfigure() ? '' : ' disabled title="Envoi non configuré (etudes/supabase.js)"') + '>Envoyer mes réponses</button>' +
+      '<span class="etat-envoi">' + (envoiConfigure() ? (dernier ? 'Envoyé le ' + esc(dernier) + ' — vous pouvez corriger et renvoyer.' : 'Vos réponses sont gardées dans ce navigateur jusqu\'à l\'envoi.')
+        : 'Envoi pas encore configuré : vos réponses restent dans ce navigateur.') + '</span></div>';
+  }
+
+  function texteSimple(html) {
+    var d = document.createElement('div');
+    d.innerHTML = html;
+    return d.textContent.replace(/\s+/g, ' ').trim();
+  }
+
+  /* Envoie une ligne par réponse non vide (API REST de Supabase, insertion seule). */
+  function envoie(annee, e, participant, reponses) {
+    var cfg = root.GA_SUPABASE;
+    var cle = String(cfg.cle).trim();
+    var entetes = { 'Content-Type': 'application/json', apikey: cle, Prefer: 'return=minimal' };
+    // ancienne clé « anon » (un JWT) : on la répète dans Authorization ; une clé sb_publishable_ n'y a pas sa place
+    if (/^eyJ/.test(cle)) entetes.Authorization = 'Bearer ' + cle;
+    var lignes = reponses.map(function (r) {
+      return { annee: annee, tp: e.id, tp_titre: e.titre, defi: r.numero, question: r.question.slice(0, 2000), participant: participant, reponse: r.reponse.slice(0, 5000) };
+    });
+    return fetch(String(cfg.url).replace(/\/+$/, '') + '/rest/v1/' + encodeURIComponent(cfg.table || 'reponses_etudes'), {
+      method: 'POST', headers: entetes, body: JSON.stringify(lignes)
+    }).then(function (rep) {
+      if (rep.ok) return lignes.length;
+      return rep.text().then(function (t) {
+        var msg = t;
+        try { msg = JSON.parse(t).message || t; } catch (err) { /* texte brut */ }
+        throw new Error('Supabase a refusé l\'envoi (' + rep.status + ') : ' + msg);
+      });
+    });
+  }
+
+  function brancheReponses(racine, annee, e) {
+    var zones = U.$$('.saisie-reponse', racine);
+    var defis = e.defis.filter(function (d) { return !d.intertitre && !d.note; });
+    zones.forEach(function (z) {
+      z.value = stockage(cleBrouillon(annee, e, z.dataset.k));
+      ajuste(z);
+      z.addEventListener('input', function () { stockage(cleBrouillon(annee, e, z.dataset.k), z.value); ajuste(z); });
+    });
+    function ajuste(z) { z.style.height = 'auto'; z.style.height = Math.min(z.scrollHeight + 2, 240) + 'px'; }
+    var champNom = U.$('[data-participant]', racine);
+    champNom.addEventListener('input', function () { stockage(CLE_PARTICIPANT, champNom.value.trim()); });
+    var bouton = U.$('[data-envoyer]', racine), etat = U.$('.etat-envoi', racine);
+    bouton.addEventListener('click', function () {
+      var participant = champNom.value.trim();
+      if (!participant) { champNom.focus(); U.toast('Indiquez votre nom ou celui de votre équipe.', 'erreur'); return; }
+      var numero = 0;
+      var reponses = [];
+      zones.forEach(function (z, i) {
+        var d = defis[i];
+        if (!d.bonus) numero++;
+        if (!z.value.trim()) return;
+        reponses.push({ numero: d.bonus ? 0 : numero, question: (d.bonus ? 'Bonus : ' : '') + texteSimple(d.texte), reponse: z.value.trim() });
+      });
+      if (!reponses.length) { U.toast('Aucune réponse à envoyer.', 'erreur'); return; }
+      bouton.disabled = true; bouton.textContent = 'Envoi…';
+      envoie(annee, e, participant, reponses).then(function (n) {
+        var quand = new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+        stockage('ga-etudes-envoi-' + annee + '-' + e.id, quand);
+        etat.textContent = 'Envoyé le ' + quand + ' — vous pouvez corriger et renvoyer.';
+        U.toast(n + ' réponse' + (n > 1 ? 's envoyées' : ' envoyée') + '. Merci !', 'ok');
+      }).catch(function (err) {
+        etat.textContent = err.message.indexOf('Supabase') === 0 ? err.message : 'Envoi impossible (connexion ?) : vos réponses restent gardées ici.';
+        U.toast('Envoi impossible.', 'erreur');
+      }).then(function () { bouton.disabled = false; bouton.textContent = 'Envoyer mes réponses'; });
+    });
   }
 
   function detail(racine, annee, c, idEtude) {
@@ -187,7 +280,8 @@
       (e.introduction ? '<div class="introduction">' + e.introduction + '</div>' : '') +
       (e.accroche ? '<p class="accroche">→ ' + esc(e.accroche) + '</p>' : '') +
       '<h3 class="defis-titre">Défis</h3>' + listeDefis(c, e.defis) +
-      (e.remarque ? '<p class="remarque">' + e.remarque + '</p>' : '') + annexe + '</div>' +
+      (e.remarque ? '<p class="remarque">' + e.remarque + '</p>' : '') + annexe +
+      (c.solutions ? '' : barreEnvoi(annee, e)) + '</div>' +
       (cote ? '<aside class="illus-cote">' + cote + '</aside>' : '') + '</div></div></article>';
     liensExternes(racine);
     U.on(racine, 'click', '.reponse.cachee', function (ev, el) {
@@ -197,6 +291,7 @@
     U.on(racine, 'click', '[data-tout]', function (ev, el) {
       U.$$('.reponse', racine).forEach(function (r) { r.classList.toggle('cachee', el.dataset.tout !== '1'); });
     });
+    if (!c.solutions) brancheReponses(racine, annee, e);
     racine.scrollTop = 0; root.scrollTo(0, 0);
   }
 

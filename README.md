@@ -130,6 +130,14 @@ remplace la liste en mode correction quand les questions y diffèrent, et `annex
 (titre + galerie d'images légendées) n'apparaît qu'en correction. `theme.accent` donne la couleur
 de l'année ; les images `motif.jpg` et `bandeau.jpg` du dossier de l'année font le décor.
 
+### Réponses des participants (Supabase)
+
+Avec le mot de passe des énoncés, chaque défi a une zone de réponse (brouillon gardé dans le
+navigateur). Le bouton « Envoyer mes réponses » les enregistre dans une table Supabase, une ligne
+par réponse remplie. Mise en place : voir [docs/SUPABASE.md](docs/SUPABASE.md) (script SQL
+`docs/supabase.sql`, puis URL du projet et clé publique dans `etudes/supabase.js`). Tant que ce
+fichier n'est pas rempli, le bouton reste grisé.
+
 `etudes/sources/` contient le texte en clair (réponses comprises) : il est exclu de git.
 Pour une nouvelle année, copier un fichier source, changer `annee` et `motsDePasse`,
 déposer les images dans `etudes/<année>/img/`, puis `chiffrer`.

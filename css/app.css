@@ -369,6 +369,15 @@ details summary { cursor: pointer; color: var(--discret); }
 .reponse.cachee:hover { background: color-mix(in srgb, var(--accent, #3f8f1f) 8%, #fff); }
 .introduction p { margin: 0 0 8px; text-align: justify; }
 .etude-epoque { font-size: .8rem; font-weight: 600; text-decoration: none; display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 10px; background: var(--accent, #1f77a8); color: #fff; vertical-align: middle; }
+.saisie-reponse { display: block; width: 100%; margin-top: 6px; min-height: 38px; resize: vertical; font: inherit; font-size: .95rem; color: #1b1b1b; background: #fff;
+  border: 1.5px dashed color-mix(in srgb, var(--accent, #3f8f1f) 70%, #fff); border-radius: 4px; padding: 6px 10px; color-scheme: light; }
+.saisie-reponse:focus { outline: none; border-style: solid; border-color: var(--accent, #3f8f1f); background: color-mix(in srgb, var(--accent, #3f8f1f) 5%, #fff); }
+.saisie-reponse::placeholder { color: #999; }
+.barre-envoi { position: sticky; bottom: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 12px; padding: 10px 0 4px; background: #fff; border-top: 1px solid #e3e3e3; }
+.barre-envoi label { display: flex; align-items: center; gap: 8px; color: #333; font-weight: 600; font-size: .92rem; }
+.barre-envoi input { color: #1b1b1b; background: #fff; border: 1px solid #bbb; color-scheme: light; width: 220px; }
+.barre-envoi .btn.principal { background: var(--accent, #1f77a8); border-color: var(--accent, #1f77a8); color: #fff; }
+.etat-envoi { color: #666; font-size: .85rem; }
 .annexe { margin-top: 10px; }
 .annexe h4 { margin: 0 0 8px; color: #111; }
 .annexe.reponse:not(.cachee) { display: block; font-weight: 400; color: #222; }
